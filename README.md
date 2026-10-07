@@ -1,4 +1,4 @@
-# dev-os
+# Gen-AI-Apps_MOTS-ShipIt
 
 A structured AI-assisted development operating system for building production-ready apps — from idea to deployed product using a stage-gated workflow enforced through Claude Code skills.
 
@@ -6,7 +6,7 @@ A structured AI-assisted development operating system for building production-re
 
 ## What This Is
 
-`dev-os` is a Claude Code project that provides a repeatable, stage-by-stage workflow for building full-stack web applications. Each stage has a dedicated skill that Claude runs when invoked. No stage begins until the previous one is approved.
+`Gen-AI-Apps_MOTS-ShipIt` is a Claude Code project that provides a repeatable, stage-by-stage workflow for building full-stack web applications. Each stage has a dedicated skill that Claude runs when invoked. No stage begins until the previous one is approved.
 
 The current application target is **ContractIQ** — an enterprise AI contract review platform for NDA and MSA analysis.
 
@@ -15,7 +15,7 @@ The current application target is **ContractIQ** — an enterprise AI contract r
 ## Folder Structure
 
 ```
-dev-os/
+Gen-AI-Apps_MOTS-ShipIt/
 ├── CLAUDE.md                     # Project instructions & stage-gated workflow rules
 ├── docs/
 │   ├── design.md                 # Brand design system (colors, typography, spacing, components)
