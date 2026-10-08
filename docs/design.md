@@ -1,18 +1,20 @@
-# allNeurons Design System
+# MOTS ShipIt Design System
 
-> Last extracted: 2026-05-13
+> Adopted for MOTS ShipIt — 2026-10-08 (rebranded from the prior generic "allNeurons" system)
 
 ---
 
 ## Product Design Philosophy
 
-allNeurons follows a **precision-first, data-dense UI** philosophy. The system is:
+MOTS ShipIt follows a **modern, approachable SaaS** philosophy, tuned for an operations console that still has to show dense freight data (load queues, carrier offers, compliance evidence, exception lists) without feeling industrial or cold. The system is:
 
-- **Information-forward** — every surface should earn its space; no decorative chrome
-- **Systematically scaled** — all values come from a token-based scale, nothing is arbitrary
+- **Clear over clinical** — generous whitespace and soft elevation make dense tables and queues feel calm, not like a terminal
+- **Systematically scaled** — all values come from a token-based scale; nothing is arbitrary
 - **Semantically layered** — raw primitives (All Colors) map to semantic tokens (Token Colors) which map to components
-- **Accessible by default** — color steps are chosen for sufficient contrast; primary text on white is near-black (#070A0E)
-- **Restrained** — the default voice is greyscale; color is used purposefully to signal state, not style
+- **Accessible by default** — color steps are chosen for sufficient contrast; primary text on white is near-black (`#070A0E`)
+- **Color communicates state, warmly** — grey carries the UI by default; color signals status (success, error, warning, and freight-specific states like SLA urgency) rather than decorating it
+
+This replaces the prior "precision-first, data-dense" framing. The underlying token architecture (colors → semantic tokens → components) is unchanged; the surface feel is lighter, with softer corners and subtle shadows instead of flat, sharp edges.
 
 ---
 
@@ -34,7 +36,7 @@ Always reference semantic tokens in UI code. Use raw primitives only when defini
 Each color family runs a 10-step scale: `900 → 800 → 700 → 600 → ★500 → 400 → 300 → 200 → 100 → 50`
 The `★` mark on 500 indicates the **primary base** for that family.
 
-#### Primary Blue (Brand Primary)
+#### Primary Blue (Brand Primary) — unchanged
 | Step | Hex |
 |------|-----|
 | 900  | `#082A5E` |
@@ -47,6 +49,8 @@ The `★` mark on 500 indicates the **primary base** for that family.
 | 200  | `#92B7F0` |
 | 100  | `#B6CFF5` |
 | 50   | `#E7EFFC` |
+
+Kept as-is: already accessible, already fully tokened, and reads as trustworthy/operational — a good fit for a compliance-heavy platform.
 
 #### Grey (Neutral Foundation)
 | Step | Hex |
@@ -65,7 +69,7 @@ The `★` mark on 500 indicates the **primary base** for that family.
 
 > Grey has an extra `25` step (near-white surface) unique to this family.
 
-#### Green (Success / Positive)
+#### Green (Success / Positive / Booked)
 | Step | Hex |
 |------|-----|
 | 900  | `#084406` |
@@ -79,7 +83,9 @@ The `★` mark on 500 indicates the **primary base** for that family.
 | 100  | `#B6E2B4` |
 | 50   | `#E7F6E7` |
 
-#### Red (Error / Danger / Destructive)
+Freight usage: booked/confirmed load, passed compliance check, carrier accepted.
+
+#### Red (Error / Danger / Blocked / Fraud Risk)
 | Step | Hex |
 |------|-----|
 | 900  | `#581618` |
@@ -92,6 +98,8 @@ The `★` mark on 500 indicates the **primary base** for that family.
 | 200  | `#EAA2A3` |
 | 100  | `#F1C0C1` |
 | 50   | `#FAEBEB` |
+
+Freight usage: failed compliance gate, blocked carrier, fraud/high-risk flag, double-booking prevention errors. Compliance/fraud risk reuses this scale rather than a dedicated color family — kept to avoid palette sprawl, since both are fundamentally "stop" states.
 
 #### Yellow (Warning / Attention)
 | Step | Hex |
@@ -106,6 +114,24 @@ The `★` mark on 500 indicates the **primary base** for that family.
 | 200  | `#FFE3BD` |
 | 100  | `#FFF2E0` |
 | 50   | `#FFF9F0` |
+
+Freight usage: general attention states — stale data warning, policy conflict needing review, non-critical validation issues. Distinct from Saffron (below), which is reserved specifically for SLA/countdown urgency.
+
+#### Saffron (SLA / Countdown Urgency) — new
+| Step | Hex |
+|------|-----|
+| 900  | `#6B3900` |
+| 800  | `#8C4B00` |
+| 700  | `#AD5E00` |
+| 600  | `#D27300` |
+| ★500 | `#F2A900` |
+| 400  | `#F5BD4D` |
+| 300  | `#F7CD79` |
+| 200  | `#FADDA3` |
+| 100  | `#FCEBC9` |
+| 50   | `#FEF6E8` |
+
+Freight usage: time-pressure states tied to the PRD's SLA/countdown requirements — exception-queue items approaching their resolution deadline (e.g. the 5-minute low-confidence-speech review window, the reservation-expiry countdown for a preferred carrier). Deliberately distinct from Yellow (general warning) and Orange (secondary accent) so urgency reads as its own signal, not a generic warning.
 
 #### Violet (Accent / Highlight)
 | Step | Hex |
@@ -135,6 +161,8 @@ The `★` mark on 500 indicates the **primary base** for that family.
 | 100  | `#FFE9E0` |
 | 50   | `#FFF4F0` |
 
+Reserved for secondary accents/highlights unrelated to SLA urgency (e.g. "new" badges, promotional callouts) — kept separate from Saffron to avoid ambiguity between "something urgent" and "something new."
+
 ---
 
 ### Semantic Tokens
@@ -144,6 +172,8 @@ The `★` mark on 500 indicates the **primary base** for that family.
 | `Token colors/Text/gray/text-gray-primary (900)` | `#070A0E` | Primary body text, headings |
 | `Token colors/Text/gray/text-gray-secondary (500)` | `#4A4C4F` | Secondary/muted text, captions, labels |
 | `Token colors/Background/gray/bg-white-primary (F-900)` | `#FFFFFF` | Primary page/card background |
+| `Token colors/Status/urgency/sla-countdown (500)` | `#F2A900` | SLA/countdown urgency badges, timers |
+| `Token colors/Status/risk/blocked-fraud (500)` | `#D13438` | Compliance-blocked and fraud-risk carrier states |
 
 > Additional semantic tokens (borders, interactive states, surface layers) follow the same naming pattern: `Token colors/{category}/{subcategory}/{role}`.
 
@@ -154,29 +184,33 @@ The `★` mark on 500 indicates the **primary base** for that family.
 1. **Text primary** → Grey 900 (`#070A0E`) on light backgrounds
 2. **Text secondary** → Grey 500 (`#4A4C4F`) for supporting copy, metadata, labels
 3. **Interactive / brand** → Primary Blue ★500 (`#115ACB`) for CTAs, links, focus rings
-4. **Success states** → Green ★500 (`#13A10E`) background tint: Green 50
-5. **Error states** → Red ★500 (`#D13438`) background tint: Red 50
-6. **Warning states** → Yellow ★500 (`#FFAA33`) background tint: Yellow 50
-7. **Surfaces** → White (`#FFFFFF`) for cards, modals; Grey 25 (`#FAFAFA`) for page bg; Grey 50 (`#F0F0F1`) for subtle dividers
-8. **Never use raw primitive tokens in component code** — always go through the semantic layer
+4. **Success states** → Green ★500 (`#13A10E`), background tint Green 50 — booked loads, passed compliance
+5. **Error / blocked / fraud-risk states** → Red ★500 (`#D13438`), background tint Red 50 — failed compliance gate, blocked carrier, fraud flag
+6. **General warning states** → Yellow ★500 (`#FFAA33`), background tint Yellow 50 — stale data, non-critical review flags
+7. **SLA / countdown urgency** → Saffron ★500 (`#F2A900`), background tint Saffron 50 — exception-queue deadlines, reservation-expiry countdowns
+8. **Surfaces** → White (`#FFFFFF`) for cards, modals; Grey 25 (`#FAFAFA`) for page bg; Grey 50 (`#F0F0F1`) for subtle dividers
+9. **Never use raw primitive tokens in component code** — always go through the semantic layer
 
 ---
 
 ## Typography Hierarchy
 
-**Font family:** `Inter Display` (all weights)
+**Font families:**
+- `Inter Display` — all UI text: headings, body copy, labels, captions
+- `JetBrains Mono` — tabular/identifier data only: load numbers, USDOT/MC numbers, rate and currency figures, booking/confirmation IDs. Monospace digits keep these columns aligned and scannable in dense tables and the exception queue.
 
 ### Type Scale
 
-| Role | Size | Weight | Line Height | Letter Spacing | CSS |
-|------|------|--------|-------------|----------------|-----|
-| H1 | ~48px | 700 | ~56px | 0 | *inferred* |
-| H2 | ~36px | 700 | ~44px | 0 | *inferred* |
-| H3 | ~30px | 600 | ~38px | 0 | *inferred* |
-| H4 | ~28px | 600 | ~36px | 0 | *inferred* |
-| **H5 / Medium** | **24px** | **500** | **32px** | **0** | `font-size:24px; font-weight:500; line-height:32px` |
-| **Paragraph Large / Medium** | **16px** | **500** | **24px** | **0** | `font-size:16px; font-weight:500; line-height:24px` |
-| **Paragraph Small / Regular** | **12px** | **400** | **18px** | **0** | `font-size:12px; font-weight:400; line-height:18px` |
+| Role | Size | Weight | Line Height | Letter Spacing | Font | CSS |
+|------|------|--------|-------------|----------------|------|-----|
+| H1 | ~48px | 700 | ~56px | 0 | Inter Display | *inferred* |
+| H2 | ~36px | 700 | ~44px | 0 | Inter Display | *inferred* |
+| H3 | ~30px | 600 | ~38px | 0 | Inter Display | *inferred* |
+| H4 | ~28px | 600 | ~36px | 0 | Inter Display | *inferred* |
+| **H5 / Medium** | **24px** | **500** | **32px** | **0** | Inter Display | `font-size:24px; font-weight:500; line-height:32px` |
+| **Paragraph Large / Medium** | **16px** | **500** | **24px** | **0** | Inter Display | `font-size:16px; font-weight:500; line-height:24px` |
+| **Paragraph Small / Regular** | **12px** | **400** | **18px** | **0** | Inter Display | `font-size:12px; font-weight:400; line-height:18px` |
+| **Data / Mono** | **14px** | **500** | **20px** | **0** | JetBrains Mono | `font-size:14px; font-weight:500; line-height:20px; font-family:'JetBrains Mono', monospace` |
 
 > Rows marked *inferred* follow the geometric progression of confirmed steps. Verify against the typography page in Figma.
 
@@ -185,9 +219,11 @@ The `★` mark on 500 indicates the **primary base** for that family.
 1. **Section labels / category headings** → H5 Medium (24/32, weight 500)
 2. **Body copy / list items / data labels** → Paragraph Large Medium (16/24, weight 500)
 3. **Captions / hex values / metadata** → Paragraph Small Regular (12/18, weight 400)
-4. **Color values in labels** always render in Grey 500; label names in Grey 900
-5. **No letter-spacing adjustments** — system is letter-spacing: 0 throughout
-6. **Line height is tight** — ratio ≈ 1.3–1.5. Never add extra leading outside the type scale.
+4. **Load numbers, MC/DOT numbers, rate figures, booking IDs** → Data/Mono (14/20, JetBrains Mono, weight 500)
+5. **Color values in labels** always render in Grey 500; label names in Grey 900
+6. **No letter-spacing adjustments** — system is letter-spacing: 0 throughout
+7. **Line height is tight** — ratio ≈ 1.3–1.5. Never add extra leading outside the type scale.
+8. **Two typefaces only** — Inter Display for all UI text, JetBrains Mono only for the tabular/identifier data listed above. Never mix beyond this split.
 
 ---
 
@@ -201,8 +237,8 @@ The spacing system is token-based on a **4px base unit**.
 |-------|-------|
 | `Spacing/Spacing 0px` | `0px` |
 | `Spacing/Spacing 4px` | `4px` |
-| `Spacing/Spacing 96px` | `96px` |
-| `Spacing/Spacing 112px` | `112px` |
+| `Spacing/Spacing 64px` | `64px` |
+| `Spacing/Spacing 80px` | `80px` |
 
 ### Inferred Scale (4px grid)
 
@@ -214,16 +250,16 @@ The spacing system is token-based on a **4px base unit**.
 24px  — section sub-grouping gap
 32px  — component-to-component gap
 40px  — section gap within a page zone
-48px  — large section padding
-64px  — inter-section spacing
-96px  — page vertical padding
-112px — page horizontal padding
+48px  — page vertical padding
+64px  — page horizontal padding
 ```
+
+> Page padding was reduced from the prior system's 96px/112px to 48px/64px — part of the "lighter, modern SaaS" shift. The old values suited a sparse, monumental precision tool; an ops console that lives in dense tables and queues reads better with tighter outer padding and the same 4px internal rhythm.
 
 ### Spacing Rules
 
 1. **All spacing values must be multiples of 4px**
-2. **Page-level padding**: 112px horizontal, 96px vertical
+2. **Page-level padding**: 64px horizontal, 48px vertical
 3. **Section gaps**: 40px between major content groups
 4. **Sub-section gaps**: 24px between labeled groups and their content
 5. **Item gaps**: 8px between label rows; 4px between color swatches
@@ -233,19 +269,37 @@ The spacing system is token-based on a **4px base unit**.
 
 ## Border Radius Rules
 
-> Border radius values are not explicitly documented in the extracted node. The following are inferred from the visual style and product tier (precision tools use subtle rounding).
+Rounded up from the prior system as part of the lighter, more approachable SaaS feel.
 
 | Context | Radius |
 |---------|--------|
-| Cards / panels | `8px` |
-| Buttons (default) | `6px` |
-| Tags / badges | `4px` |
-| Inputs | `6px` |
-| Modals | `12px` |
+| Cards / panels | `12px` |
+| Buttons (default) | `8px` |
+| Tags / badges | `6px` |
+| Inputs | `8px` |
+| Modals | `16px` |
 | Color swatches (as seen in palette) | `0px` (flat/square) |
 | Avatars / image containers | `50%` (full circle) |
 
-> Verify against the component library pages in Figma. Default to `6px` when in doubt.
+> Default to `8px` when in doubt.
+
+---
+
+## Elevation / Shadows
+
+New in this revision — the prior system was intentionally flat (depth only via background-color steps). A lighter SaaS feel needs soft elevation to separate cards, modals, and dropdowns from the page without hard borders.
+
+| Level | Usage | CSS |
+|-------|-------|-----|
+| 0 — Flat | Page background, inline elements | none |
+| 1 — Resting | Cards, table rows on hover | `0 1px 2px rgba(7,10,14,0.06), 0 1px 1px rgba(7,10,14,0.04)` |
+| 2 — Raised | Dropdowns, popovers, tooltips | `0 4px 8px rgba(7,10,14,0.08), 0 2px 4px rgba(7,10,14,0.04)` |
+| 3 — Overlay | Modals, sheets | `0 12px 24px rgba(7,10,14,0.12), 0 4px 8px rgba(7,10,14,0.06)` |
+
+Rules:
+1. Shadows use the Grey 900 hue at low opacity — never a pure black shadow
+2. Borders (Grey 100/200) are still preferred for simple separation (table rows, list items); reserve shadow for anything that visually floats above the page (cards, modals, popovers)
+3. Never combine a heavy border *and* a heavy shadow on the same element
 
 ---
 
@@ -255,10 +309,10 @@ The spacing system is token-based on a **4px base unit**.
 
 ```
 ┌────────────────────────────────────────────────────┐
-│  padding: 96px top/bottom, 112px left/right        │
+│  padding: 48px top/bottom, 64px left/right          │
 │  ┌──────────────────────────────────────────────┐  │
 │  │  Content area (full-width flex column)       │  │
-│  │  gap: 40px between major sections            │  │
+│  │  gap: 40px between major sections             │  │
 │  └──────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────┘
 ```
@@ -281,7 +335,7 @@ Each content section follows:
 
 ### Responsive Behavior
 
-The wrapping flex grid (`flex-wrap`) allows color swatches to reflow at smaller widths. The `flex: 1 0 0` pattern ensures equal-width columns that shrink uniformly.
+The wrapping flex grid (`flex-wrap`) allows color swatches and card grids to reflow at smaller widths. The `flex: 1 0 0` pattern ensures equal-width columns that shrink uniformly.
 
 ---
 
@@ -315,11 +369,32 @@ Used anywhere a value needs a name + sub-label (not just colors):
 ```
 Gap between rows: `2px`.
 
+### SLA Countdown Badge — new
+
+```
+background: Saffron 50
+border: 1px solid Saffron 200
+text: Saffron 700, Data/Mono 14px (the countdown value) + Paragraph Small Regular 12px (the label)
+border-radius: 6px
+padding: 2px 8px
+```
+Used in the exception queue (FR-15) for time remaining before an SLA breach. Switch to Red 50/200/700 once the deadline has passed.
+
+### Compliance / Risk Status Badge — new
+
+```
+background: [Green|Red] 50
+border: 1px solid [Green|Red] 200
+text: [Green|Red] 700, Paragraph Small Medium
+border-radius: 6px
+padding: 2px 8px
+icon: check (Green) or block (Red), 12px
+```
+Green = passed identity/authority/insurance checks. Red = blocked carrier or fraud flag — reuses the error scale per the Color Usage Rules above.
+
 ---
 
 ## Interaction / Motion Language
-
-> Motion is not explicitly defined in the extracted color guidance page. The following guidelines are inferred from the product tier and design philosophy.
 
 ### Principles
 
@@ -338,6 +413,7 @@ Gap between rows: `2px`.
 | Modal / sheet exit | `150ms` | `ease-in` |
 | Page transitions | `250ms` | `ease-in-out` |
 | Skeleton → content | `300ms` | `ease-in-out` |
+| SLA countdown tick (Saffron → Red at breach) | `200ms` | `ease-in-out` |
 
 ### State Colors (Motion-adjacent)
 
@@ -348,18 +424,19 @@ Gap between rows: `2px`.
 | Focus | White | Blue 500 (2px) | Grey 900 |
 | Active / Pressed | Grey 100 | Grey 300 | Grey 900 |
 | Disabled | Grey 25 | Grey 100 | Grey 400 |
-| Error | Red 50 | Red 500 | Red 700 |
-| Success | Green 50 | Green 500 | Green 700 |
+| Error / Blocked | Red 50 | Red 500 | Red 700 |
+| Success / Booked | Green 50 | Green 500 | Green 700 |
 | Warning | Yellow 50 | Yellow 500 | Yellow 800 |
+| SLA Urgency | Saffron 50 | Saffron 500 | Saffron 700 |
 
 ---
 
 ## Visual Principles
 
-1. **Density over sprawl** — pack information at comfortable density; white space is intentional, not default
+1. **Clarity over density-for-its-own-sake** — whitespace and soft elevation separate information, not just borders
 2. **Hierarchy through weight and size, not decoration** — differentiate levels via font weight (400 vs 500) and size, not color or ornament
-3. **Color = signal** — grey is the default; color communicates status, brand, or action
-4. **Flat depth** — no gradients, no shadows by default; depth via background-color steps (Grey 25 → White)
+3. **Color = signal** — grey is the default; color communicates status, urgency, or action
+4. **Soft depth** — subtle shadows (see Elevation) plus background-color steps (Grey 25 → White); no harsh borders where elevation can do the job
 5. **Systematic consistency** — if a value isn't in the token list, it doesn't belong in the UI
 
 ---
@@ -369,13 +446,14 @@ Gap between rows: `2px`.
 1. **Use semantic tokens** — never hardcode hex values in component styles; always reference `Token colors/…`
 2. **Type roles are fixed** — don't mix type scale roles (e.g. don't use H5 for body copy)
 3. **Spacing must be on-grid** — every gap, padding, and margin must be a multiple of 4px
-4. **Color families for status** — Blue=brand/info, Green=success, Red=error/danger, Yellow=warning, Violet=accent, Orange=secondary accent
+4. **Color families for status** — Blue=brand/info, Green=success/booked, Red=error/blocked/fraud-risk, Yellow=general warning, Saffron=SLA/countdown urgency, Violet=accent, Orange=secondary accent (new/promotional)
 5. **Grey 900 for primary text, Grey 500 for secondary** — do not use other grey steps for body text
 6. **White for elevated surfaces, Grey 25 for page background, Grey 50 for subtle dividers/hover**
-7. **Inter Display is the sole typeface** — no mixing fonts
+7. **Two typefaces only** — Inter Display for UI text, JetBrains Mono for load numbers/IDs/rate figures — no other fonts
 8. **0 letter-spacing** — do not add tracking unless explicitly specified in a style
 9. **Color swatches are square** (radius: 0) — do not round swatch/palette UI elements
 10. **Section titles use H5 (24px Medium)** — not H4 or any other step
+11. **Shadows over heavy borders** for anything that floats above the page (cards, modals, popovers); borders remain fine for simple row/list separation
 
 ---
 
@@ -387,10 +465,10 @@ Gap between rows: `2px`.
 background: [Color] 50
 border: 1px solid [Color] 200
 text: [Color] 700, Paragraph Small Medium
-border-radius: 4px
+border-radius: 6px
 padding: 2px 8px
 ```
-Replace `[Color]` with Green/Red/Yellow/Blue based on status.
+Replace `[Color]` with Green/Red/Yellow/Saffron/Blue based on status.
 
 ### Data Label Pair
 
@@ -398,6 +476,15 @@ Replace `[Color]` with Green/Red/Yellow/Blue based on status.
 <div style="display:flex; flex-direction:column; gap:2px;">
   <span style="font:500 16px/24px 'Inter Display'; color:#070A0E;">Label</span>
   <span style="font:400 12px/18px 'Inter Display'; color:#4A4C4F;">Sub-value</span>
+</div>
+```
+
+### Freight Data Pair (mono value)
+
+```html
+<div style="display:flex; flex-direction:column; gap:2px;">
+  <span style="font:400 12px/18px 'Inter Display'; color:#4A4C4F;">Load #</span>
+  <span style="font:500 14px/20px 'JetBrains Mono', monospace; color:#070A0E;">LD-294817</span>
 </div>
 ```
 
@@ -414,11 +501,11 @@ Replace `[Color]` with Green/Red/Yellow/Blue based on status.
 
 ```html
 <main style="
-  padding: 96px 112px;
+  padding: 48px 64px;
   display: flex;
   flex-direction: column;
   gap: 40px;
-  background: #FFFFFF;
+  background: #FAFAFA;
 ">
   <!-- sections -->
 </main>
@@ -431,6 +518,86 @@ Replace `[Color]` with Green/Red/Yellow/Blue based on status.
   <!-- each item: flex: 1 0 0; min-width: 1px -->
 </div>
 ```
+
+---
+
+## Reports Sub-theme (Stretch — Good to Have, Not MVP)
+
+A distinct, optional theme scoped **only** to data-visualization/report screens (e.g. a load-estimate confidence/evidence breakdown, carrier-offer sensitivity analysis, compliance evidence bundles). Everything else in the app keeps the core system above (Blue primary, Inter Display + JetBrains Mono, Saffron SLA urgency, etc.) completely unchanged. This theme is explicitly a later/stretch addition — do not apply it to the core ops console, forms, or tables.
+
+**Inspiration:** [CubeRight](https://getcuberight.com) — a predictive-cubing/logistics-analytics product with a confidence-scored measurement queue, a sensitivity table, a provenance/source bar, and a decision-lock timeline. Colors and fonts below were read directly from their live site's CSS, not guessed.
+
+### Report Theme Colors
+
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `report-navy-900` | `#0A0D22` | Dark anchor — report section headers, dark report backgrounds |
+| `report-teal-500` | `#0A6C61` | Primary accent for the report theme — section markers, primary data series |
+| `report-amber-500` | `#E3AC49` | Highlight color for "this is where the value is" figures (e.g. the carrier/lane driving the biggest cost swing) |
+| `report-amber-600` | `#C6892C` | Darker amber — amber text on light backgrounds |
+| `report-amber-100` | `#F4CD78` | Light amber tint — amber background fills |
+| `report-gray-700` | `#4B5060` | Report body text |
+| `report-gray-500` | `#686E7E` | Report secondary/muted text |
+| `report-gray-300` | `#A1A7B4` | Report captions |
+| `report-gray-50` | `#E6E8EC` | Report surface/background tint |
+
+### Typography Exception
+
+Within the Reports sub-theme only: `Newsreader` (serif) for report headings/titles, to read as more editorial/analytical than the ops console. Body copy and data inside reports still use Inter Display and JetBrains Mono per the core system's type scale — **Newsreader is for headings only, and only inside this theme.** This is the one exception to the core rule "two typefaces only" — it does not apply outside report screens.
+
+### Report Component Patterns
+
+Each pattern below maps to a real requirement from the MOTS ShipIt PRD, not just decoration:
+
+**Confidence Score Badge** — maps to FR-07 (term extraction confidence) and FR-11 (offer comparison explanations)
+```
+background: report-gray-50
+border: 1px solid report-teal-500 (20% opacity)
+text: report-teal-500, Data/Mono (the % value) + Paragraph Small Regular (the label)
+border-radius: 6px
+padding: 4px 10px
+```
+
+**Sensitivity Table** — shows how an input change (rate ceiling, carrier mix, fuel surcharge) affects an outcome; maps to policy testing (FR-02) and analytics (FR-18)
+```
+header row: report-navy-900 text, Newsreader, 16px
+body rows: alternating white / report-gray-50
+delta cells: report-amber-600 text when the change is value-positive, Red 700 when value-negative
+```
+
+**Provenance / Source Bar** — a thin strip citing where each figure came from; maps directly to the PRD's evidence/audit requirements (FR-15, FR-17, and the Auditability NFR)
+```
+background: report-navy-900
+text: white, Paragraph Small Regular
+icon: source/link icon, 12px, report-amber-500
+```
+
+**Decision-Lock Timeline** — a horizontal timeline of when inputs lock vs. when they're still changeable; maps to the same SLA/exception-countdown concept as the Saffron urgency color in the core system
+```
+track: report-gray-50
+locked segment: report-navy-900
+open segment: report-teal-500
+countdown marker: report-amber-500 (ties to core Saffron urgency semantics, translated into this theme's palette)
+```
+
+### CSS Custom Properties (scoped, additive)
+
+```css
+[data-theme="reports"] {
+  --report-navy-900:   #0A0D22;
+  --report-teal-500:   #0A6C61;
+  --report-amber-600:  #C6892C;
+  --report-amber-500:  #E3AC49;
+  --report-amber-100:  #F4CD78;
+  --report-gray-700:   #4B5060;
+  --report-gray-500:   #686E7E;
+  --report-gray-300:   #A1A7B4;
+  --report-gray-50:    #E6E8EC;
+  --report-font-heading: 'Newsreader', serif;
+}
+```
+
+Apply `data-theme="reports"` only on the wrapping container of a report/analytics screen — never at the document root, so the core theme stays the default everywhere else.
 
 ---
 
@@ -502,6 +669,18 @@ Replace `[Color]` with Green/Red/Yellow/Blue based on status.
   --color-yellow-100: #FFF2E0;
   --color-yellow-50:  #FFF9F0;
 
+  /* Saffron — SLA / countdown urgency */
+  --color-saffron-900: #6B3900;
+  --color-saffron-800: #8C4B00;
+  --color-saffron-700: #AD5E00;
+  --color-saffron-600: #D27300;
+  --color-saffron-500: #F2A900;
+  --color-saffron-400: #F5BD4D;
+  --color-saffron-300: #F7CD79;
+  --color-saffron-200: #FADDA3;
+  --color-saffron-100: #FCEBC9;
+  --color-saffron-50:  #FEF6E8;
+
   /* Violet */
   --color-violet-900: #380070;
   --color-violet-800: #5700AD;
@@ -514,7 +693,7 @@ Replace `[Color]` with Green/Red/Yellow/Blue based on status.
   --color-violet-100: #F2E5FF;
   --color-violet-50:  #F7F0FF;
 
-  /* Orange */
+  /* Orange — secondary accent (new/promotional, not urgency) */
   --color-orange-900: #802400;
   --color-orange-800: #B33300;
   --color-orange-700: #D63D00;
@@ -533,6 +712,8 @@ Replace `[Color]` with Green/Red/Yellow/Blue based on status.
   --bg-surface:     var(--color-grey-25);
   --bg-subtle:      var(--color-grey-50);
   --brand:          var(--color-blue-500);
+  --sla-urgency:    var(--color-saffron-500);
+  --risk-blocked:   var(--color-red-500);
 
   /* Spacing */
   --space-1:  4px;
@@ -544,8 +725,17 @@ Replace `[Color]` with Green/Red/Yellow/Blue based on status.
   --space-10: 40px;
   --space-12: 48px;
   --space-16: 64px;
-  --space-24: 96px;
-  --space-28: 112px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(7,10,14,0.06), 0 1px 1px rgba(7,10,14,0.04);
+  --shadow-2: 0 4px 8px rgba(7,10,14,0.08), 0 2px 4px rgba(7,10,14,0.04);
+  --shadow-3: 0 12px 24px rgba(7,10,14,0.12), 0 4px 8px rgba(7,10,14,0.06);
 }
 ```
 
@@ -575,6 +765,14 @@ Replace `[Color]` with Green/Red/Yellow/Blue based on status.
   line-height: 18px;
   letter-spacing: 0;
 }
+
+.type-data-mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: 0;
+}
 ```
 
 ### Figma Token Path Convention
@@ -590,26 +788,38 @@ When reading or writing to Figma:
 ## Quick Reference Card
 
 ```
-FONT        Inter Display
+FONT-UI     Inter Display
+FONT-MONO   JetBrains Mono (load #, MC/DOT #, rates, confirmation IDs only)
 TEXT-1      #070A0E (Grey 900)
 TEXT-2      #4A4C4F (Grey 500)
 BG          #FFFFFF (White)
 SURFACE     #FAFAFA (Grey 25)
 SUBTLE      #F0F0F1 (Grey 50)
 BRAND       #115ACB (Primary Blue 500)
-SUCCESS     #13A10E (Green 500)
-ERROR       #D13438 (Red 500)
-WARNING     #FFAA33 (Yellow 500)
+SUCCESS     #13A10E (Green 500)      — booked / passed compliance
+ERROR       #D13438 (Red 500)        — blocked / fraud risk
+WARNING     #FFAA33 (Yellow 500)     — general attention
+SLA-URGENCY #F2A900 (Saffron 500)    — countdown / exception deadline
 ACCENT      #7F00FF (Violet 500)
+SECONDARY   #FF4405 (Orange 500)     — new / promotional only
 
-PAGE-PAD    112px H / 96px V
+PAGE-PAD    64px H / 48px V
 SECTION-GAP 40px
 SUBSEC-GAP  24px
 ITEM-GAP    8px
 MICRO-GAP   4px
 
-RADIUS-SM   4px
-RADIUS-MD   6px
-RADIUS-LG   8px
-RADIUS-XL   12px
+RADIUS-SM   6px
+RADIUS-MD   8px
+RADIUS-LG   12px
+RADIUS-XL   16px
+
+SHADOW-1    0 1px 2px rgba(7,10,14,.06)   — cards
+SHADOW-2    0 4px 8px rgba(7,10,14,.08)   — dropdowns/popovers
+SHADOW-3    0 12px 24px rgba(7,10,14,.12) — modals
+
+REPORTS SUB-THEME (stretch, not MVP — report/analytics screens only, data-theme="reports")
+  NAVY      #0A0D22   TEAL     #0A6C61
+  AMBER     #E3AC49   AMBER-DK #C6892C   AMBER-LT #F4CD78
+  HEADING FONT  Newsreader (serif, headings only — body stays Inter Display/JetBrains Mono)
 ```

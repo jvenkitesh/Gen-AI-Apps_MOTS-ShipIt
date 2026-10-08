@@ -8,7 +8,7 @@ A structured AI-assisted development operating system for building production-re
 
 `Gen-AI-Apps_MOTS-ShipIt` is a Claude Code project that provides a repeatable, stage-by-stage workflow for building full-stack web applications. Each stage has a dedicated skill that Claude runs when invoked. No stage begins until the previous one is approved.
 
-The current application target is **ContractIQ** — an enterprise AI contract review platform for NDA and MSA analysis.
+The current application target is **MOTS ShipIt** — an agentic workflow platform for U.S. freight brokers that sources, negotiates with, verifies, and books carriers for approved loads with minimal human touch.
 
 ---
 
@@ -19,7 +19,7 @@ Gen-AI-Apps_MOTS-ShipIt/
 ├── CLAUDE.md                     # Project instructions & stage-gated workflow rules
 ├── docs/
 │   ├── design.md                 # Brand design system (colors, typography, spacing, components)
-│   ├── ContractIQ_PRD.md         # Product Requirements Document for ContractIQ
+│   ├── MOTS ShipIt.docx_PRD_OLD.pdf  # Product Requirements Document for MOTS ShipIt
 ├── skills/                       # Claude Code custom skills (slash commands)
 │   ├── engineering-planner/
 │   │   └── SKILL.md              # Stage 1: PRD → engineering docs
@@ -68,7 +68,7 @@ Reviews all engineering and spec documents, identifies every security surface, a
 Scaffolds a complete Next.js 14 (App Router) project — `package.json`, `next.config.mjs`, `app/layout.jsx`, `app/globals.css`, `app/page.jsx` — and runs the dev server.
 
 ### `/design-system`
-Enforces the brand design system defined in `docs/design.md` on all frontend code. Applied automatically whenever any UI component, page, or style is written. Uses Inter for body text, JetBrains Mono for contract content, and `#112E81` as the primary brand color.
+Enforces the brand design system defined in `docs/design.md` (the "allNeurons" design system) on all frontend code. Applied automatically whenever any UI component, page, or style is written. Uses Inter Display as the sole typeface and `#115ACB` as the primary brand color.
 
 ---
 
@@ -81,13 +81,8 @@ Enforces the brand design system defined in `docs/design.md` on all frontend cod
 
 ---
 
-## Current Project: ContractIQ
+## Current Project: MOTS ShipIt
 
-An enterprise AI platform for legal contract review, targeting NDA and MSA documents. The PRD is at `docs/ContractIQ_PRD.md`.
+An agentic workflow platform for U.S. freight brokers. It ingests an approved load, contacts eligible carriers in parallel, negotiates rate within broker-defined guardrails, verifies carrier identity/compliance, atomically books the selected carrier, and syncs the result back to the TMS. The PRD is at `docs/MOTS ShipIt.docx_PRD_OLD.pdf`.
 
-Tech stack (fixed):
-- **Frontend:** Next.js 14 (App Router)
-- **Backend:** Next.js API Routes
-- **Database:** Supabase (PostgreSQL + Auth + Storage)
-- **AI:** Anthropic Claude API
-- **UI:** Lucide React icons, Inter + JetBrains Mono fonts
+Tech stack: not yet finalized — pending Stage 1 (`/engineering-planner`) architectural decisions.
