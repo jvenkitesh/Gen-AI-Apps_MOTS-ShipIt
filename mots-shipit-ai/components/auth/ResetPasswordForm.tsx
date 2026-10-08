@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { LOADING_TEXT } from "@/components/ui/LoadingIndicator";
 import { FormField } from "@/components/auth/FormField";
 import { FormMessage } from "@/components/auth/FormMessage";
 import { useJsonForm } from "@/lib/hooks/useJsonForm";
@@ -58,7 +59,7 @@ export function ResetPasswordForm() {
         onChange={(e) => setConfirmPassword(e.target.value)}
       />
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Saving…" : "Set new password"}
+        {isSubmitting ? LOADING_TEXT : "Set new password"}
       </Button>
     </form>
   );

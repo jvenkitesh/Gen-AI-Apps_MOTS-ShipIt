@@ -1,77 +1,81 @@
 # Spec — Load Intake & Policy Engine (C1 + C2)
 
+The **Policy engine** checks every load the TMS sends against the customer's active **sourcing policy** — the guardrails set by the Supply Chain Operations Manager (allowed lanes, equipment, rate range) — before any carrier is contacted.
+
 ## User flow
 
-1. TMS sends a webhook to `POST /api/loads/webhook` with a sourcing-ready load payload.
-2. `lib/freight/loadIntake.ts` validates required fields, creates/updates the `loads` row (versioned), and resolves the customer's active `policies` row.
-3. `lib/freight/policyEngine.ts` evaluates hard eligibility constraints (lane, equipment, carrier tier gates) against that policy and marks the load `sourcing`-eligible or raises an `exceptions` row (`trigger_type: policy_ineligible`).
+1. The TMS sends a webhook to `POST /api/loads/webhook` with a sourcing-ready load.
+2. `lib/freight/loadIntake.ts` validates the payload, then calls `transportation_shipment.ingest_load()` which atomically creates the load, creates a new **version** when the TMS changed its terms, or reports it unchanged.
+3. `lib/freight/policyEngine.ts` evaluates the load against the customer's active `operational_excellence_governance.sourcing_policies` row:
+   - passes every rule → load `status = 'sourcing'`
+   - fails a rule, or no active policy → load `status = 'exception'` and an `operational_excellence_governance.operational_exceptions` row (`trigger_type` `policy_ineligible` or `no_active_policy`, 4-hour SLA). A missing or empty policy setting never means "no constraints".
+
+## Tables (SQL: `supabase/loads_customers_policies_exceptions.sql`)
+
+- `master_data_management.customers`
+- `operational_excellence_governance.sourcing_policies` — one `active` policy per customer; `eligible_lanes` `[{"origin_state":"TN","destination_state":"*"}]`, `eligible_equipment` `["dry_van","reefer"]`, `rate_bounds` `{"minimum_dollars":500,"maximum_dollars":5000}`
+- `transportation_shipment.loads` — versioned per `external_id`, stores the eligibility result (`eligibility_reason_codes`, `evaluated_policy_id/version`, `evaluated_at`)
+- `operational_excellence_governance.operational_exceptions`
 
 ## Module interfaces
 
 ```ts
 // lib/freight/loadIntake.ts
-export async function ingestLoad(payload: TmsLoadPayload): Promise<{ loadId: string; version: number }>;
-// Validates via Zod schema (below). If a load with this TMS external id already
-// exists, increments `version` instead of creating a new row, and invalidates
-// any `offers` rows tied to the prior version (status -> 'expired').
+export async function ingestLoad(admin: SupabaseClient, payload: TmsLoadPayload): Promise<IngestOutcome>;
+// IngestOutcome = { loadId, version, outcome: 'created' | 'new_version' | 'unchanged', status, eligibility }
 
 // lib/freight/policyEngine.ts
-export async function evaluateEligibility(loadId: string): Promise<EligibilityResult>;
+export function evaluateAgainstPolicy(load: LoadForEvaluation, policy: SourcingPolicy | null): EligibilityResult;
 // EligibilityResult = { eligible: boolean; reasonCodes: string[] }
+// Reason codes: NO_ACTIVE_POLICY, NO_LANES_CONFIGURED, LANE_NOT_ELIGIBLE, UNKNOWN_LANE_STATE,
+// NO_EQUIPMENT_CONFIGURED, EQUIPMENT_NOT_ELIGIBLE, RATE_BOUNDS_NOT_SET,
+// TARGET_RATE_BELOW_MINIMUM, RATE_CEILING_ABOVE_MAXIMUM
 ```
 
-## Validation schema (Zod, inline in the route per project convention)
+Expiring `carrier_offers` tied to an old load version is wired in Feature 5 (negotiation), when that table exists.
+
+## Webhook payload (Zod, `tmsLoadPayloadSchema` in `lib/freight/loadIntake.ts`)
 
 ```ts
-const TmsLoadPayload = z.object({
-  external_id: z.string(),            // TMS's own load identifier, used for de-dup/versioning
-  lane_origin_zip: z.string().regex(/^\d{5}$/),
-  lane_dest_zip: z.string().regex(/^\d{5}$/),
-  equipment_type: z.enum(['dry_van', 'reefer']),
-  schedule_pickup: z.string().datetime(),
-  schedule_delivery: z.string().datetime(),
-  commodity: z.string(),
-  weight_lbs: z.number().positive(),
-  customer_id: z.string().uuid(),
-  target_rate: z.number().positive(),
-  rate_ceiling: z.number().positive(),
-});
+{
+  external_id: string,              // TMS's own load id, used for de-dup/versioning
+  customer_id: uuid,                // master_data_management.customers.id
+  origin_zipcode: "38103",          // 5 digits; state derived server-side
+  destination_zipcode: "30303",
+  equipment_type: "dry_van" | "reefer",
+  scheduled_pickup_at: ISO datetime,
+  scheduled_delivery_at: ISO datetime,   // >= pickup
+  commodity: string,
+  weight_pounds: number > 0,
+  target_rate_dollars: number > 0,
+  rate_ceiling_dollars: number > 0,      // >= target rate
+}
 ```
 
 ## API contract
 
 ### `POST /api/loads/webhook`
 
-Auth: service-to-service. Header `X-TMS-Webhook-Secret` compared against `TMS_WEBHOOK_SECRET` (constant-time comparison). **Not** a Supabase-authenticated user request.
+Auth: service-to-service. Header `X-TMS-Webhook-Secret` compared against `TMS_WEBHOOK_SECRET` in constant time. Not a signed-in user request. Needs `SUPABASE_SERVICE_ROLE_KEY`.
 
-Request: `TmsLoadPayload` (above).
-
-Response (201 new load):
-```json
-{ "load_id": "uuid", "version": 1, "status": "sourcing" }
-```
-
-Response (200, existing load updated):
-```json
-{ "load_id": "uuid", "version": 2, "status": "sourcing", "invalidated_offers": 3 }
-```
-
-Errors: `401` bad/missing secret, `400` Zod validation failure (body lists the failing field).
+- `201` created / `200` new version or unchanged: `{ "load_id", "version", "outcome", "status", "eligible", "reason_codes" }`
+- `400` validation failure (`field`, `message`) or `UNKNOWN_CUSTOMER`; `401` bad/missing secret; `503` not configured; `500` unexpected
 
 ### `GET /api/loads`
 
-Auth: required (any role). Query params: `status`, `customer_id`. Role-scoped (admin: all; others: per assignment — assignment model is out of scope for MVP, so for now all authenticated roles see all loads; tighten later).
-
-Response: `{ "items": [{ "id", "status", "lane_origin_zip", "lane_dest_zip", "equipment_type", "target_rate", "created_at" }] }`
+Auth: any signed-in role (assignment model is out of MVP scope). Query params: `status`, `customer_id`. Response: `{ "items": [LoadRow] }`.
 
 ## Component spec
 
-- `app/(app)/loads/page.tsx` — data-dense table (per `docs/design.md`'s core philosophy), columns: status badge, lane, equipment, target rate, created.
-- Status badge colors: `sourcing` = Blue, `negotiating` = Yellow, `booked` = Green, `exception` = Saffron/Red (per `docs/design.md` Color Usage Rules).
-- `app/(app)/loads/[id]/page.tsx` — load detail: policy snapshot, candidate list (links to carrier-ranking spec), offers, compliance status.
+- `app/(app)/loads/page.tsx` — status filter + data-dense table (status, load id + version, customer, lane, equipment, weight, target rate, rate ceiling, pickup, received). Every column label ends with an ⓘ definition.
+- Status badges: sourcing = Blue, negotiating = Yellow, booked = Green, exception = Saffron, cancelled = Red.
+- `app/(app)/loads/[id]/page.tsx` — load fields, Policy engine eligibility (reason codes in plain language), the sourcing policy version it was checked against, the load's exceptions, and a placeholder for carrier candidates/offers.
+- Loading states use the shared "Transmogrifying…" indicator.
 
 ## Edge cases
 
-- Webhook delivers a payload missing a required field → `400`, load never created, TMS must retry with complete data (no partial row left behind — validate before any INSERT)
-- Load changes mid-negotiation (new webhook for the same `external_id`, different terms) → increment `version`; any `offers` tied to the old version flip to `expired`; if a carrier had already verbally accepted under the old version, this surfaces as an exception (`trigger_type: load_changed_post_acceptance`) rather than silently discarding
-- No active `policies` row for the load's customer → load created but held at `status: 'exception'` (`trigger_type: no_active_policy`) — never defaults to "no constraints"
+- Payload missing a field → `400`, nothing written (validation happens before any insert).
+- Same `external_id`, identical terms → `unchanged`, version kept, no duplicate exception.
+- Same `external_id`, changed terms → `new_version`, re-evaluated; exceptions record the version.
+- Unknown `customer_id` → `400 UNKNOWN_CUSTOMER`.
+- No active policy → load stored with `status = 'exception'` (`no_active_policy`).

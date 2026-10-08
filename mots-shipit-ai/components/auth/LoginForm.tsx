@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { LOADING_TEXT } from "@/components/ui/LoadingIndicator";
 import { FormField } from "@/components/auth/FormField";
 import { FormMessage } from "@/components/auth/FormMessage";
 import { useJsonForm } from "@/lib/hooks/useJsonForm";
@@ -51,7 +52,7 @@ export function LoginForm({ notice }: { notice?: { tone: "error" | "success"; te
         </Link>
       </div>
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Logging in…" : "Log in"}
+        {isSubmitting ? LOADING_TEXT : "Log in"}
       </Button>
     </form>
   );

@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils/cn";
 
 type BadgeProps = React.HTMLAttributes<HTMLSpanElement> & {
-  color?: "green" | "red" | "yellow" | "saffron" | "blue" | "violet";
+  color?: "green" | "red" | "yellow" | "saffron" | "blue" | "violet" | "grey";
 };
 
 // docs/design.md "Semantic Status Badge": bg [Color]-50, border [Color]-200,
@@ -13,6 +13,7 @@ const colorClasses: Record<NonNullable<BadgeProps["color"]>, string> = {
   saffron: "bg-saffron-50 border-saffron-200 text-saffron-700",
   blue: "bg-blue-50 border-blue-200 text-blue-700",
   violet: "bg-violet-50 border-violet-200 text-violet-700",
+  grey: "bg-grey-50 border-grey-200 text-grey-700",
 };
 
 export function Badge({ color = "blue", className, ...props }: BadgeProps) {

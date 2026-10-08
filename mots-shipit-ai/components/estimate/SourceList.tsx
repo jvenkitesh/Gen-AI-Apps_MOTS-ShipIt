@@ -1,3 +1,4 @@
+import { Label } from "@/components/ui/Label";
 import type { EstimateSource } from "@/lib/estimate/types";
 
 const KB_LABELS: Record<EstimateSource["kb"], string> = {
@@ -10,7 +11,7 @@ export function SourceList({ sources }: { sources: EstimateSource[] }) {
   if (sources.length === 0) return null;
   return (
     <div className="flex flex-col gap-1 border-t border-grey-100 pt-3">
-      <span className="text-body-sm font-medium text-grey-500">Sources</span>
+      <span className="text-body-sm font-medium text-grey-500"><Label text="Sources" definition="sources" /></span>
       <ul className="flex flex-col gap-1">
         {sources.map((s) => (
           <li key={`${s.kb}-${s.detail}`} className="text-body-sm text-grey-500">

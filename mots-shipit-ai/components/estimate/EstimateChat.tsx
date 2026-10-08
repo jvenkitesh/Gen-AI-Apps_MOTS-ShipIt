@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/Card";
+import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { FormMessage } from "@/components/auth/FormMessage";
 import { EstimateAnswerCard } from "@/components/estimate/EstimateAnswerCard";
 import { EstimateInput } from "@/components/estimate/EstimateInput";
@@ -78,7 +79,7 @@ export function EstimateChat() {
           ) : (
             <Card key={x.id} className="flex flex-col gap-3 p-6" aria-busy="true">
               <p className="text-body-sm text-grey-500">“{x.question}”</p>
-              <p className="text-body-sm text-grey-500">Checking knowledge bases…</p>
+              <LoadingIndicator />
               <div className="h-4 w-3/4 animate-pulse rounded-sm bg-grey-50" />
               <div className="h-4 w-1/2 animate-pulse rounded-sm bg-grey-50" />
             </Card>
@@ -88,7 +89,7 @@ export function EstimateChat() {
 
       <aside className="flex flex-col gap-3">
         <h2 className="text-body-lg font-medium text-grey-900">Your recent questions</h2>
-        {history.isLoading && <div className="h-4 w-full animate-pulse rounded-sm bg-grey-50" />}
+        {history.isLoading && <LoadingIndicator />}
         {!history.isLoading && (history.data ?? []).length === 0 && (
           <p className="text-body-sm text-grey-500">No questions yet.</p>
         )}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { LOADING_TEXT } from "@/components/ui/LoadingIndicator";
 
 export function SignOutButton() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export function SignOutButton() {
 
   return (
     <Button variant="ghost" onClick={handleSignOut} disabled={isSigningOut}>
-      {isSigningOut ? "Signing out…" : "Sign out"}
+      {isSigningOut ? LOADING_TEXT : "Sign out"}
     </Button>
   );
 }

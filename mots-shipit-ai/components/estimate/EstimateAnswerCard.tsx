@@ -1,14 +1,16 @@
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { Label } from "@/components/ui/Label";
 import { SourceList } from "@/components/estimate/SourceList";
 import type { EstimateResult } from "@/lib/estimate/types";
+import type { LabelKey } from "@/lib/labelDefinitions";
 
 const dollars = (n: number | null) => (n === null ? "—" : `$${n.toFixed(2)}`);
 
-function Figure({ label, value }: { label: string; value: string }) {
+function Figure({ label, definition, value }: { label: string; definition: LabelKey; value: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-body-sm text-grey-500">{label}</span>
+      <span className="text-body-sm text-grey-500"><Label text={label} definition={definition} /></span>
       <span className="font-mono text-data-mono text-grey-900">{value}</span>
     </div>
   );
@@ -30,20 +32,20 @@ export function EstimateAnswerCard({ question, result }: { question: string; res
       {hasRoute && (
         <>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Figure label="Best choice" value={answer.carrier ? `${answer.carrier}` : "—"} />
-            <Figure label="Estimated cost" value={dollars(answer.usd_estimate)} />
-            <Figure label="Transit days" value={answer.transit_days === null ? "—" : String(answer.transit_days)} />
-            <Figure label="Weight" value={`${answer.weight_pounds} lb${answer.weight_assumed ? " (assumed)" : ""}`} />
+            <Figure label="Best choice" definition="bestChoice" value={answer.carrier ? `${answer.carrier}` : "—"} />
+            <Figure label="Estimated cost" definition="estimatedCost" value={dollars(answer.usd_estimate)} />
+            <Figure label="Transit days" definition="transitDays" value={answer.transit_days === null ? "—" : String(answer.transit_days)} />
+            <Figure label="Weight" definition="weight" value={`${answer.weight_pounds} lb${answer.weight_assumed ? " (assumed)" : ""}`} />
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[480px] text-left">
               <thead>
                 <tr className="border-b border-grey-100 text-body-sm text-grey-500">
-                  <th className="py-2 pr-4 font-medium">Option</th>
-                  <th className="py-2 pr-4 font-medium">Carrier</th>
-                  <th className="py-2 pr-4 font-medium">Cost</th>
-                  <th className="py-2 font-medium">Delivery</th>
+                  <th className="py-2 pr-4 font-medium"><Label text="Option" definition="option" /></th>
+                  <th className="py-2 pr-4 font-medium"><Label text="Carrier" definition="carrier" /></th>
+                  <th className="py-2 pr-4 font-medium"><Label text="Cost" definition="cost" /></th>
+                  <th className="py-2 font-medium"><Label text="Delivery" definition="delivery" /></th>
                 </tr>
               </thead>
               <tbody className="text-body-sm text-grey-900">
@@ -73,9 +75,13 @@ export function EstimateAnswerCard({ question, result }: { question: string; res
             </table>
           </div>
 
-          <p className="text-body-sm text-grey-500">
-            Ship-to {answer.ship_to}
-            {answer.corridor && ` · Corridor ${answer.corridor}`}
+          <p className="flex flex-wrap items-center gap-x-1 text-body-sm text-grey-500">
+            <Label text="Ship-to" definition="shipTo" /> {answer.ship_to}
+            {answer.corridor && (
+              <>
+                <span aria-hidden="true">·</span> <Label text="Corridor" definition="corridor" /> {answer.corridor}
+              </>
+            )}
           </p>
         </>
       )}

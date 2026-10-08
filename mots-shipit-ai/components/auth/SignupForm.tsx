@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
+import { LOADING_TEXT } from "@/components/ui/LoadingIndicator";
 import { FormField } from "@/components/auth/FormField";
 import { FormMessage } from "@/components/auth/FormMessage";
 import { useJsonForm } from "@/lib/hooks/useJsonForm";
@@ -52,7 +53,7 @@ export function SignupForm() {
         onChange={(e) => setPassword(e.target.value)}
       />
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Creating account…" : "Create account"}
+        {isSubmitting ? LOADING_TEXT : "Create account"}
       </Button>
     </form>
   );

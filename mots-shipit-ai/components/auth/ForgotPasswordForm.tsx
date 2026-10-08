@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
+import { LOADING_TEXT } from "@/components/ui/LoadingIndicator";
 import { FormField } from "@/components/auth/FormField";
 import { FormMessage } from "@/components/auth/FormMessage";
 import { useJsonForm } from "@/lib/hooks/useJsonForm";
@@ -32,7 +33,7 @@ export function ForgotPasswordForm() {
         onChange={(e) => setEmail(e.target.value)}
       />
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Sending…" : "Send reset link"}
+        {isSubmitting ? LOADING_TEXT : "Send reset link"}
       </Button>
     </form>
   );
