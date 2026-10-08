@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* docs/design.md: Grey 25 page background, Grey 900 primary text, 0 letter-spacing throughout */
+body {
+  @apply bg-grey-25 font-sans text-grey-900;
+  letter-spacing: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
