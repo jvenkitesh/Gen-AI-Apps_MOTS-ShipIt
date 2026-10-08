@@ -3,6 +3,7 @@ import { COMPLIANCE_REASON_TEXT, getFreshCompliance } from "@/lib/freight/compli
 import { tmsAdapter, type BookingRecord } from "@/lib/freight/tmsAdapter";
 import { assertNotPaused, ScopePausedError } from "@/lib/freight/controlPlane";
 import { getLoad } from "@/lib/freight/loadQueries";
+import { recordEvent } from "@/lib/freight/audit";
 
 export class BookingError extends Error {
   constructor(message: string, readonly code: string, readonly httpStatus: number) {
@@ -86,7 +87,17 @@ export async function commitBooking(params: {
   }
 
   const compliance = await getFreshCompliance(admin, offer.carrier_id as string);
-  if (compliance.state === "stale") throw new BookingError(compliance.reason, "COMPLIANCE_UNAVAILABLE", 409);
+  if (compliance.state === "stale") {
+    await recordEvent(admin, {
+      entityType: "compliance_check",
+      entityId: offer.carrier_id as string,
+      eventType: "stale_blocked_booking",
+      loadId,
+      actorId: userId,
+      payload: { offer_id: offerId, reason: compliance.reason, last_checked_at: compliance.lastCheckedAt },
+    });
+    throw new BookingError(compliance.reason, "COMPLIANCE_UNAVAILABLE", 409);
+  }
   if (compliance.check.result === "block") {
     const why = compliance.check.reasons.map((r) => COMPLIANCE_REASON_TEXT[r] ?? r).join("; ");
     throw new BookingError(`The carrier failed its compliance check: ${why || "blocked"}.`, "COMPLIANCE_BLOCKED", 409);

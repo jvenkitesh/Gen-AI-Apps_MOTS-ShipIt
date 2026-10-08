@@ -13,6 +13,9 @@ import { outreachSettings } from "@/lib/freight/outreach";
 import { NegotiationPanel, type OfferView } from "@/components/loads/NegotiationPanel";
 import { freshnessHours } from "@/lib/freight/compliance";
 import { BookingPanel, type BookingView } from "@/components/loads/BookingPanel";
+import { AuditTrail } from "@/components/audit/AuditTrail";
+import { actorNames, auditTrailForLoad, type AuditEventRow } from "@/lib/freight/audit";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { customerNames, getLoad, type LoadRow } from "@/lib/freight/loadQueries";
 import { REASON_CODE_TEXT } from "@/lib/freight/policyEngine";
@@ -110,6 +113,12 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
   let rows: Array<Omit<InteractionRow, "carrier_name"> & { carrier_id: string }> = [];
   let booking: BookingView | null = null;
   let canRetrySync = false;
+  let auditEvents: AuditEventRow[] = [];
+  let auditActors: Record<string, string> = {};
+  if (load) {
+    auditEvents = await auditTrailForLoad(supabase, load.id).catch(() => []);
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) auditActors = await actorNames(createAdminClient(), auditEvents).catch(() => ({}));
+  }
   if (load) {
     const { data: bookingRow } = await supabase
       .schema("transportation_shipment")
@@ -335,6 +344,13 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
                 canContact={canContact && (load.status === "sourcing" || load.status === "negotiating")}
                 interactions={interactions}
               />
+            </section>
+          )}
+
+          {auditEvents.length > 0 && (
+            <section className="order-last flex flex-col gap-6">
+              <h2 className="text-h5 text-grey-900"><Label text="Audit trail" definition="auditTrail" /></h2>
+              <AuditTrail events={auditEvents} actorNames={auditActors} />
             </section>
           )}
 

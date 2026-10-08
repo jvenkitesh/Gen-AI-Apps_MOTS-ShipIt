@@ -31,6 +31,15 @@ Every other module in this spec set (`booking.ts`, `negotiation.ts`, `compliance
 | `exception` | `raised`, `resolved`, `breached` |
 | `control_action` | `pause`, `resume`, `override`, `cancel` |
 
+## As built (Feature 9, 2026-10-08)
+
+- `operational_excellence_governance.audit_events` (`supabase/audit_events.sql`). Immutable three ways: guard triggers reject every update, delete and truncate with `AUDIT_IMMUTABLE` (even for the service role and admins); authenticated gets select only; the service role gets select and insert only.
+- Row changes are audited by database triggers (`audit_row_change()`) in the same transaction as the change, so an event can't be lost or written for a change that rolled back. Audited tables: loads, carrier_offers, carrier_compliance_checks, carrier_bookings, operational_exceptions, control_actions. Entity names: `load`, `offer`, `compliance_check` (was `compliance_snapshot` above), `booking`, `exception`, `control_action`. The exception events also include `escalated`.
+- `recordEvent(admin, {...})` in `lib/freight/audit.ts` is only for events with no row change of their own: `compliance_check.stale_blocked_booking` (booking.ts) and `offer.extracted` with `model_version` (negotiation.ts, which AI model read the carrier's reply). It throws when the write fails.
+- The actor comes from the row (actor_id, decided_by, booked_by, resolved_by, checked_by, created_by), else `auth.uid()`, else "System". `policy_version` comes from the row's `evaluated_policy_version` (load events).
+- UI: an audit trail at the bottom of each load page, and the audit log across every load on `/reports` (latest 150, with a link to each load). Actor names are read with the service role because profiles are readable only by their owner.
+- Verified live (in a transaction that rolled back): a control-action pause wrote one `control_action.pause` event, and both an update and a delete of it failed with `AUDIT_IMMUTABLE`.
+
 ## Edge cases
 
 None by design — this module has no business-logic branches, only writes. The only failure mode is the write itself failing, which should propagate as a failure of the caller's transaction (an audit write failing silently is worse than the whole operation failing loudly).

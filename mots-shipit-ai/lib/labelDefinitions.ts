@@ -70,6 +70,8 @@ export const LABEL_DEFINITIONS = {
   controlScope: "What the action applies to: everything (global), one customer, one load, one lane (origin-destination states), one agent (outreach, negotiation or booking) or one channel (email or SMS).",
   tmsSyncFailures: "Bookings that haven't been written back to the TMS yet. The carrier commitment stands; retry the sync on the load page.",
 
+  auditTrail: "Every decision and change for this load, newest first. Written automatically with each change and can never be edited or deleted.",
+
   // Outreach
   outreachMode: "Test mode never contacts real carriers: messages are simulated or go only to your test email or phone. Live mode contacts carriers' real contacts.",
   batchSize: "How many of the next-ranked carriers to contact now. Carriers already contacted for this load version are skipped.",

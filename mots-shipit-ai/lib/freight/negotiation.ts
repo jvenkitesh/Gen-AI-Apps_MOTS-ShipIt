@@ -4,6 +4,8 @@ import { getFreshCompliance, COMPLIANCE_REASON_TEXT } from "@/lib/freight/compli
 import { getLoad, type LoadRow } from "@/lib/freight/loadQueries";
 import { sendCarrierMessage } from "@/lib/freight/outreach";
 import { assertNotPaused, ScopePausedError } from "@/lib/freight/controlPlane";
+import { recordEvent } from "@/lib/freight/audit";
+import { OPENAI_MODEL } from "@/lib/ai/openaiClient";
 import type { UserRole } from "@/types/userRole";
 
 export class NegotiationError extends Error {
@@ -140,6 +142,17 @@ export async function recordCarrierReply(params: {
   }
 
   const extracted = await extractOfferFromReply(replyText);
+  // Which model read the reply, and what it read, so every offer is traceable to its source.
+  await recordEvent(admin, {
+    entityType: "offer",
+    entityId: inbound.id,
+    eventType: "extracted",
+    loadId: load.id,
+    actorId: userId,
+    payload: { carrier_id: carrierId, interaction_id: inbound.id, extracted },
+    modelVersion: extracted ? OPENAI_MODEL : null,
+    policyVersion: load.evaluated_policy_version,
+  });
   if (!extracted || extracted.confidence < minConfidence()) {
     const reason = !extracted
       ? "The reply couldn't be read automatically (AI extraction unavailable)."
