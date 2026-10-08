@@ -7,7 +7,7 @@ export const LABEL_DEFINITIONS = {
   weight: "Shipment weight used for the estimate. If the question has no weight, a default is assumed.",
   option: "Where the price comes from: your routing guide, or a live ShipStation rate estimate.",
   carrier: "The trucking, rail or parcel company that would move the freight.",
-  cost: "Total price in US dollars. For ShipStation this adds shipping, insurance, confirmation and other charges.",
+  cost: "Total price in US dollars. For ShipStation this adds shipping, insurance, confirmation and other charges. ShipStation estimates are not exact quotes and may leave out insurance or some surcharges.",
   delivery: "Days until delivery. Routing guide transit days, or ShipStation's delivery-day estimate.",
   shipTo: "The routing guide's gateway destination for this state: the place freight is delivered to.",
   corridor: "The highway or rail route the freight travels, from the routing guide.",

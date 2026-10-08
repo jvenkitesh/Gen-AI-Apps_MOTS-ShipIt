@@ -47,6 +47,10 @@ export async function getRateEstimate(
 ): Promise<ShipStationRate | { error: 'unavailable' | 'timeout' }>;
 // Calls POST https://api.shipstation.com/v2/rates/estimate with header
 // `api-key: ${SHIPSTATION_API_KEY}`. 10s timeout.
+// carrier_ids are always sent (ShipStation Rate Shopping guide): SHIPSTATION_CARRIER_IDS, or
+// every carrier connected to the account via GET /v2/carriers (cached 1 hour).
+// Estimates are not exact quotes and may omit insurance or some surcharges (shown in the UI).
+// Never use /v2/labels/rate_shopper_id/... -- it buys a label.
 // ESTIMATE ONLY: never call label, shipment-purchase or any endpoint that confirms
 // a load to ShipStation. ShipIt only reports the best choice back to the user.
 // Selected rate = cheapest total (shipping + insurance + confirmation + other amounts);

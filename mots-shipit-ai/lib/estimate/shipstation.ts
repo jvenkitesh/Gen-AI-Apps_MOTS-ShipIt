@@ -1,14 +1,46 @@
 import type { RoutingGuideEntry, ShipStationMoney, ShipStationOutcome, ShipStationRate } from "@/lib/estimate/types";
 
 const ESTIMATE_URL = "https://api.shipstation.com/v2/rates/estimate";
+const CARRIERS_URL = "https://api.shipstation.com/v2/carriers";
 const TIMEOUT_MS = 10_000;
+const CARRIER_CACHE_MS = 60 * 60 * 1000;
 
+// Total per the ShipStation Rate Shopping guide: shipping + insurance + confirmation + other.
+// The guide's field table calls the first one shipment_amount; the API returns shipping_amount.
 export function rateTotal(rate: ShipStationRate): number {
   const amount = (m: ShipStationMoney) => (m && typeof m.amount === "number" ? m.amount : 0);
+  const shipping = rate.shipping_amount ?? (rate as { shipment_amount?: ShipStationMoney }).shipment_amount;
   return (
-    amount(rate.shipping_amount) + amount(rate.insurance_amount) +
+    amount(shipping) + amount(rate.insurance_amount) +
     amount(rate.confirmation_amount) + amount(rate.other_amount)
   );
+}
+
+let carrierCache: { ids: string[]; at: number } | null = null;
+
+// The guide: "you'll always need the carrier_ids". Use SHIPSTATION_CARRIER_IDS when set,
+// otherwise every carrier connected to the ShipStation account (cached for an hour).
+async function carrierIds(apiKey: string): Promise<string[]> {
+  const configured = (process.env.SHIPSTATION_CARRIER_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (configured.length > 0) return configured;
+  if (carrierCache && Date.now() - carrierCache.at < CARRIER_CACHE_MS) return carrierCache.ids;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(CARRIERS_URL, { headers: { "api-key": apiKey }, signal: controller.signal, cache: "no-store" });
+    if (!res.ok) return [];
+    const json = (await res.json().catch(() => null)) as { carriers?: Array<{ carrier_id?: string; disabled_by_billing_plan?: boolean }> } | null;
+    const ids = (json?.carriers ?? [])
+      .filter((c) => c.carrier_id && !c.disabled_by_billing_plan)
+      .map((c) => c.carrier_id as string);
+    carrierCache = { ids, at: Date.now() };
+    return ids;
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // "Memphis, TN" -> { city: "Memphis", state: "TN" }
@@ -34,13 +66,17 @@ export async function getRateEstimate(params: {
   }
 
   const origin = splitCityState(params.entry.origin_hub);
-  const carrierIds = (process.env.SHIPSTATION_CARRIER_IDS ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const ids = await carrierIds(apiKey);
+  if (ids.length === 0) {
+    return {
+      status: "unavailable",
+      allRates: [],
+      reason: "No ShipStation carrier is connected (or SHIPSTATION_CARRIER_IDS is empty and the carrier list couldn't be read)",
+    };
+  }
 
   const body = {
-    ...(carrierIds.length > 0 ? { carrier_ids: carrierIds } : {}),
+    carrier_ids: ids,
     from_country_code: "US",
     from_postal_code: fromPostalCode,
     from_city_locality: origin.city,
@@ -69,7 +105,8 @@ export async function getRateEstimate(params: {
       return { status: "unavailable", allRates: [], reason: `ShipStation ${res.status}${message ? `: ${message}` : ""}` };
     }
 
-    const rates: ShipStationRate[] = Array.isArray(json) ? json : (json?.rates ?? []);
+    // /v2/rates/estimate returns a plain list; /v2/rates wraps it in rate_response.rates.
+    const rates: ShipStationRate[] = Array.isArray(json) ? json : (json?.rate_response?.rates ?? json?.rates ?? []);
     const priced = rates.filter((r) => rateTotal(r) > 0 && !(r.error_messages && r.error_messages.length > 0));
     if (priced.length === 0) {
       return { status: "no_rates", allRates: rates, reason: "ShipStation returned no priced rates" };
