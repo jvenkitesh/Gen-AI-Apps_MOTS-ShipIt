@@ -395,43 +395,54 @@ All routes wrapped in `requireAuth()`; all mutating routes validated against cen
 
 ```
 Gen-AI-Apps_MOTS-ShipIt/
-├── app/                          # Next.js App Router — no src/ wrapper (per ContractIQ playbook lesson)
-│   ├── (auth)/
-│   │   ├── login/
-│   │   └── signup/
-│   ├── (app)/
-│   │   ├── dashboard/
-│   │   ├── loads/[id]/
-│   │   ├── exceptions/
-│   │   ├── carriers/
-│   │   ├── policies/
-│   │   ├── estimate/             # load-estimate chatbot UI
-│   │   └── reports/              # stretch — Reports sub-theme
-│   └── api/
-│       ├── estimate/
-│       ├── loads/
-│       ├── offers/
-│       ├── carriers/
-│       ├── control/
-│       └── exceptions/
-├── lib/
-│   ├── supabase/                 # client/server Supabase helpers
-│   ├── security/                 # authGuard, rateLimiter, promptInjectionGuard, inputValidator
-│   ├── ai/                       # Claude client, prompt templates per role
-│   ├── freight/                  # C1-C9 service modules
-│   └── estimate/                 # cache, routingGuide, shipstation, glossary, orchestrator
-├── middleware.ts
+├── mots-shipit-ai/               # Next.js app — own subfolder, mirrors sibling ContractIQ (`contractiq/`)
+│   ├── app/                      # App Router — no src/ wrapper
+│   │   ├── (auth)/
+│   │   │   ├── login/
+│   │   │   └── signup/
+│   │   ├── (app)/
+│   │   │   ├── dashboard/
+│   │   │   ├── loads/[id]/
+│   │   │   ├── exceptions/
+│   │   │   ├── carriers/
+│   │   │   ├── policies/
+│   │   │   ├── estimate/         # load-estimate chatbot UI
+│   │   │   └── reports/          # stretch — Reports sub-theme
+│   │   └── api/
+│   │       ├── estimate/
+│   │       ├── loads/
+│   │       ├── offers/
+│   │       ├── carriers/
+│   │       ├── control/
+│   │       └── exceptions/
+│   ├── components/
+│   │   ├── providers/            # QueryProvider (TanStack Query)
+│   │   └── ui/                   # Button, Card, Badge, Input — design.md tokens
+│   ├── lib/
+│   │   ├── supabase/             # client / server / admin Supabase helpers
+│   │   ├── security/             # authGuard, rateLimiter, promptInjectionGuard, inputValidator
+│   │   ├── ai/                   # Claude client, prompt templates per role
+│   │   ├── freight/              # C1-C9 service modules
+│   │   ├── estimate/             # cache, routingGuide, shipstation, glossary, orchestrator
+│   │   ├── hooks/
+│   │   └── utils/
+│   ├── types/                    # database.ts (generated Supabase types)
+│   ├── data/
+│   │   └── Routing_Guide.json    # KB1 — inside the app so the Netlify build (base = mots-shipit-ai) bundles it
+│   ├── specs/                    # Stage 2 granular specs + supabase-schema.sql
+│   ├── supabase/
+│   │   └── rls-policies.sql      # Stage 7
+│   ├── middleware.ts
+│   ├── tailwind.config.ts        # design.md tokens
+│   └── .env.local / .env.local.example
 ├── docs/
-│   ├── engineering/               # this file + implementation-specs.md (Stage 1)
-│   ├── specs/                     # Stage 2 granular specs
-│   ├── security/                  # Stage 7 security plan
+│   ├── engineering/              # this file + implementation-specs.md (Stage 1)
+│   ├── security/                 # Stage 7 security plan
 │   ├── design.md
-│   ├── notes/                     # gitignored — mirrored project memory
+│   ├── notes/                    # gitignored — mirrored project memory
 │   └── MOTS ShipIt.docx_PRD_OLD.pdf
-├── Routing_Guide.json             # KB1, repo root
-├── supabase/
-│   └── rls-policies.sql           # Stage 7
-└── .env.local / .env.example
+├── test/                         # Stage 5 — Vitest + Playwright (root, as in ContractIQ)
+└── netlify.toml                  # base = "mots-shipit-ai"
 ```
 
 ---

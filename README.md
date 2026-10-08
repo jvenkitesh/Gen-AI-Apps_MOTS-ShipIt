@@ -17,8 +17,15 @@ The current application target is **MOTS ShipIt** — an agentic workflow platfo
 ```
 Gen-AI-Apps_MOTS-ShipIt/
 ├── CLAUDE.md                     # Project instructions & stage-gated workflow rules
+├── netlify.toml                  # Netlify build config (base = "mots-shipit-ai")
+├── mots-shipit-ai/               # The Next.js 14 app (App Router, TypeScript, Tailwind)
+│   ├── app/ components/ lib/ types/ middleware.ts
+│   ├── data/Routing_Guide.json   # KB1 lane/corridor data
+│   ├── specs/                    # Stage 2 specs + supabase-schema.sql
+│   └── .env.local.example        # Copy to .env.local and fill in
 ├── docs/
 │   ├── design.md                 # Brand design system (colors, typography, spacing, components)
+│   ├── engineering/              # Stage 1 engineering docs
 │   ├── MOTS ShipIt.docx_PRD_OLD.pdf  # Product Requirements Document for MOTS ShipIt
 ├── skills/                       # Claude Code custom skills (slash commands)
 │   ├── engineering-planner/
@@ -33,7 +40,7 @@ Gen-AI-Apps_MOTS-ShipIt/
 │       └── SKILL.md              # Applied during all frontend work — enforces design.md
 ```
 
-> Files and folders under `docs/engineering/`, `docs/specs/`, `docs/security/`, and `.env.example` are generated outputs — they are created during the build workflow and do not exist until their respective stage runs.
+> Files and folders under `docs/engineering/`, `mots-shipit-ai/specs/`, `docs/security/`, and `mots-shipit-ai/.env.local.example` are generated outputs — they are created during the build workflow and do not exist until their respective stage runs.
 
 ---
 
@@ -44,10 +51,10 @@ Each stage must be completed and approved before the next begins.
 | Stage | Skill | Input | Output |
 |---|---|---|---|
 | 1 — Engineering Plan | `/engineering-planner` | PRD | `docs/engineering/engineering-doc.md` + `docs/engineering/implementation-specs.md` |
-| 2 — Implementation Specs | `/implementation-specs` | Stage 1 docs | `docs/specs/*.md` + `docs/specs/supabase-schema.sql` + `.env.example` |
-| 3 — Security Foundation | `/security-foundation` | Stages 1–2 docs | `docs/security/security-plan.md` + `supabase/rls-policies.sql` + `src/lib/security/` |
+| 2 — Implementation Specs | `/implementation-specs` | Stage 1 docs | `mots-shipit-ai/specs/*.md` + `mots-shipit-ai/specs/supabase-schema.sql` + `mots-shipit-ai/.env.local.example` |
+| 3 — Security Foundation | `/security-foundation` | Stages 1–2 docs | `docs/security/security-plan.md` + `mots-shipit-ai/supabase/rls-policies.sql` + `mots-shipit-ai/lib/security/` |
 | 4 — Frontend Setup | `/frontend-setup` | Stages 2–3 docs | Scaffolded Next.js 14 app |
-| 5 — Feature Implementation | *(manual, one feature at a time)* | `docs/specs/*.md` | Feature code |
+| 5 — Feature Implementation | *(manual, one feature at a time)* | `mots-shipit-ai/specs/*.md` | Feature code |
 
 ---
 

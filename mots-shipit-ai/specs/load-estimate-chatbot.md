@@ -16,7 +16,7 @@ Phase 1 flagship feature. A user asks for a USD load estimate for a US zip/state
 
 | KB | Source | Call pattern |
 |---|---|---|
-| KB1 | `Routing_Guide.json` (repo root, static) | Loaded once at module init in `lib/estimate/routingGuide.ts`, queried in-memory by `state_code` or `zipcode` field |
+| KB1 | `data/Routing_Guide.json` (inside `mots-shipit-ai/`, static) | Loaded once at module init in `lib/estimate/routingGuide.ts`, queried in-memory by `state_code` or `zipcode` field |
 | KB2 | ShipStation Rates API (free tier) | Live HTTPS call from `lib/estimate/shipstation.ts`, using `SHIPSTATION_API_KEY` |
 | KB3 | Unisco Freight Glossary (`https://unisco.com/freight-glossary/<term>`) | Live HTTPS call from `lib/estimate/glossary.ts`, only invoked when the query contains an ambiguous/unrecognized logistics term (e.g. "what's a reefer rate to..." triggers a glossary lookup for "reefer") |
 

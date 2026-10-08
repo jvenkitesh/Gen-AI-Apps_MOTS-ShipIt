@@ -1,0 +1,14 @@
+[build]
+  base = "mots-shipit-ai"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  # These NEXT_PUBLIC_* vars are meant to be public (baked into the client
+  # bundle by design) and trip false-positive matches in node_modules docs.
+  # Real secrets (SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, SHIPSTATION_API_KEY,
+  # TMS_WEBHOOK_SECRET) are NOT listed here, so Netlify's secrets scanner still checks for those.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_APP_URL,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

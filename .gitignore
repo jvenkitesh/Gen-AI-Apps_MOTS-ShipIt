@@ -1,4 +1,16 @@
 .DS_Store
 docs/notes/
+
+# Environment variables (never commit secrets)
+.env
 .env.local
 .env*.local
+
+# Next.js (mots-shipit-ai/ and any future app folders)
+node_modules/
+.next/
+out/
+build/
+*.pem
+npm-debug.log*
+*.tsbuildinfo
