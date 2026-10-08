@@ -4,6 +4,8 @@ import { stateFromZip } from "@/lib/estimate/usStates";
 import { evaluateAgainstPolicy, type EligibilityResult, type SourcingPolicy } from "@/lib/freight/policyEngine";
 
 const EXCEPTION_SLA_HOURS = 4;
+// Exceptions raised automatically about a load's terms; a newer version makes them stale.
+const SUPERSEDABLE_TRIGGERS = ["policy_ineligible", "no_active_policy", "no_candidates"];
 
 // Payload a TMS sends to POST /api/loads/webhook.
 export const tmsLoadPayloadSchema = z
@@ -98,6 +100,20 @@ export async function ingestLoad(admin: SupabaseClient, payload: TmsLoadPayload)
     })
     .eq("id", ingested.load_id);
   if (updateError) throw new Error(`Saving the policy check failed: ${updateError.message}`);
+
+  // A new version replaces the old terms, so automatic exceptions raised for older versions
+  // no longer describe the load. Close them; the new version gets its own check below.
+  if (ingested.outcome === "new_version") {
+    const { error: supersedeError } = await admin
+      .schema("operational_excellence_governance")
+      .from("operational_exceptions")
+      .update({ status: "resolved", resolution: `Superseded by load version ${ingested.load_version}.` })
+      .eq("load_id", ingested.load_id)
+      .eq("status", "open")
+      .lt("load_version", ingested.load_version)
+      .in("trigger_type", SUPERSEDABLE_TRIGGERS);
+    if (supersedeError) throw new Error(`Closing superseded exceptions failed: ${supersedeError.message}`);
+  }
 
   if (!eligibility.eligible && ingested.outcome !== "unchanged") {
     const { error: exceptionError } = await admin
