@@ -8,6 +8,8 @@ import { LoadStatusBadge } from "@/components/loads/LoadStatusBadge";
 import { CarrierCandidates } from "@/components/loads/CarrierCandidates";
 import type { CandidateList } from "@/lib/freight/carrierRanking";
 import { rankCandidates } from "@/lib/freight/rankCandidates";
+import { OutreachPanel, type InteractionRow } from "@/components/loads/OutreachPanel";
+import { outreachSettings } from "@/lib/freight/outreach";
 import { createClient } from "@/lib/supabase/server";
 import { customerNames, getLoad, type LoadRow } from "@/lib/freight/loadQueries";
 import { REASON_CODE_TEXT } from "@/lib/freight/policyEngine";
@@ -95,6 +97,40 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
     }
   } else if (load) {
     rankingNote = "Carriers are ranked only for loads that passed the policy engine. Resolve the exception first.";
+  }
+
+  let interactions: InteractionRow[] = [];
+  let canContact = false;
+  if (load) {
+    const [{ data: interactionRows }, { data: userData }] = await Promise.all([
+      supabase
+        .schema("transportation_shipment")
+        .from("carrier_interactions")
+        .select("id, carrier_id, channel, outreach_mode, status, recipient, skip_reason, error_message, message_text, created_at")
+        .eq("load_id", load.id)
+        .eq("load_version", load.version)
+        .order("created_at", { ascending: false }),
+      supabase.auth.getUser(),
+    ]);
+    const rows = (interactionRows ?? []) as Array<Omit<InteractionRow, "carrier_name"> & { carrier_id: string }>;
+    if (rows.length > 0) {
+      const { data: carrierRows } = await supabase
+        .schema("data_foundation")
+        .from("carriers")
+        .select("id, name")
+        .in("id", Array.from(new Set(rows.map((r) => r.carrier_id))));
+      const names = Object.fromEntries((carrierRows ?? []).map((c) => [c.id as string, c.name as string]));
+      interactions = rows.map((r) => ({ ...r, carrier_name: names[r.carrier_id] ?? "Unknown carrier" }));
+    }
+    if (userData.user) {
+      const { data: profile } = await supabase
+        .schema("data_foundation")
+        .from("user_profiles")
+        .select("role")
+        .eq("id", userData.user.id)
+        .maybeSingle();
+      canContact = ["administrator", "supply_chain_operations_manager", "transportation_planner"].includes(profile?.role ?? "");
+    }
   }
 
   return (
@@ -226,6 +262,18 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
               <p className="text-body-sm text-grey-500">{rankingNote}</p>
             )}
           </section>
+
+          {(load.status === "sourcing" || load.status === "negotiating" || interactions.length > 0) && (
+            <section className="flex flex-col gap-6">
+              <h2 className="text-h5 text-grey-900">Carrier outreach (version {load.version})</h2>
+              <OutreachPanel
+                loadId={load.id}
+                mode={outreachSettings().mode}
+                canContact={canContact && (load.status === "sourcing" || load.status === "negotiating")}
+                interactions={interactions}
+              />
+            </section>
+          )}
         </>
       )}
     </main>

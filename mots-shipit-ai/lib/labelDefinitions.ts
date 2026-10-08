@@ -49,6 +49,13 @@ export const LABEL_DEFINITIONS = {
   usdotNumber: "The carrier's US Department of Transportation number.",
   mcNumber: "The carrier's Motor Carrier (MC) operating authority number.",
   carrierSource: "Where the carrier record came from: seeded from the routing guide, or added manually.",
+
+  // Outreach
+  outreachMode: "Test mode never contacts real carriers: messages are simulated or go only to your test email or phone. Live mode contacts carriers' real contacts.",
+  batchSize: "How many of the next-ranked carriers to contact now. Carriers already contacted for this load version are skipped.",
+  outreachChannel: "How the carrier was contacted: email or SMS.",
+  outreachResult: "Sent (delivered to the provider), simulated (recorded but not sent), failed (provider error after one retry) or skipped (with the reason).",
+  outreachRecipient: "Where the message went. In test mode this is your test address, never the carrier's.",
   riskLevel: "How serious the problem is: low, medium, high or critical.",
 } as const;
 

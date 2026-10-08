@@ -42,6 +42,18 @@ Response:
 
 Errors: `409` if the load is already `booked` (no outreach on a closed load).
 
+## As built (Feature 5, 2026-10-08)
+
+- Provider decision, contacts and legal sign-off were still open, so outreach ships in **test mode by default** (`OUTREACH_MODE=test`): messages go only to `OUTREACH_TEST_EMAIL` / `OUTREACH_TEST_PHONE` when a provider is configured, otherwise they are **simulated** (recorded, not sent). Real carrier contacts are used only with `OUTREACH_MODE=live`.
+- Channels (`lib/freight/outreachChannels.ts`): `ResendEmailChannel` (Resend REST), `TwilioSmsChannel` (Twilio REST), `SimulatedChannel`; all implement `OutreachChannel`, so voice plugs in later without changing `outreach.ts`.
+- Log: `transportation_shipment.carrier_interactions` (verbatim message + disclosure, mode, status sent/simulated/failed/skipped, skip reason, provider reference). Disclosure line: `sourcing_policies.outreach_disclosure_text` (policy-controlled, never model-written). SQL: `supabase/carrier_interactions.sql`.
+- Messages contain load facts only (lane, equipment, weight, commodity, pickup/delivery); never the target rate or rate ceiling.
+- Rules: opted-out contacts never contacted or counted; live-mode frequency cap per contact (default 3 per 24 h); next batch for the same load version only after `OUTREACH_BATCH_WAIT_MINUTES` (default 30) → `429 BATCH_WAIT`; provider failure retried once, then logged as failed and skipped; carriers already contacted for this load version are not contacted again; live mode skips carriers with no contact (`no_contact`).
+- First successful batch moves the load from `sourcing` to `negotiating`.
+- Roles that may contact: administrator, supply_chain_operations_manager, transportation_planner. `409` for booked/cancelled/exception loads.
+- UI: "Carrier outreach" panel on `/loads/[id]`: mode badge, batch size, "Contact next carriers", interaction log with message preview.
+- Not yet built: inbound replies (STOP opt-out handling, carrier responses) — needs provider webhooks; planned with negotiation (Feature 6).
+
 ## Edge cases
 
 - Contact has `opt_out: true` → excluded from the batch entirely, never contacted, never counted toward batch size
