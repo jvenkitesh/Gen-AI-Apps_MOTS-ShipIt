@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { stateFromZip } from "@/lib/estimate/usStates";
 import { evaluateAgainstPolicy, type EligibilityResult, type SourcingPolicy } from "@/lib/freight/policyEngine";
+import { expireOffersForOldVersions } from "@/lib/freight/negotiation";
 
 const EXCEPTION_SLA_HOURS = 4;
 // Exceptions raised automatically about a load's terms; a newer version makes them stale.
@@ -113,6 +114,7 @@ export async function ingestLoad(admin: SupabaseClient, payload: TmsLoadPayload)
       .lt("load_version", ingested.load_version)
       .in("trigger_type", SUPERSEDABLE_TRIGGERS);
     if (supersedeError) throw new Error(`Closing superseded exceptions failed: ${supersedeError.message}`);
+    await expireOffersForOldVersions(admin, ingested.load_id, ingested.load_version);
   }
 
   if (!eligibility.eligible && ingested.outcome !== "unchanged") {

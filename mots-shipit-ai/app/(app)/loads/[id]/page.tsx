@@ -10,6 +10,8 @@ import type { CandidateList } from "@/lib/freight/carrierRanking";
 import { rankCandidates } from "@/lib/freight/rankCandidates";
 import { OutreachPanel, type InteractionRow } from "@/components/loads/OutreachPanel";
 import { outreachSettings } from "@/lib/freight/outreach";
+import { NegotiationPanel, type OfferView } from "@/components/loads/NegotiationPanel";
+import { freshnessHours } from "@/lib/freight/compliance";
 import { createClient } from "@/lib/supabase/server";
 import { customerNames, getLoad, type LoadRow } from "@/lib/freight/loadQueries";
 import { REASON_CODE_TEXT } from "@/lib/freight/policyEngine";
@@ -101,6 +103,10 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
 
   let interactions: InteractionRow[] = [];
   let canContact = false;
+  let canVerify = false;
+  let offers: OfferView[] = [];
+  let contactedCarriers: Array<{ id: string; name: string }> = [];
+  let rows: Array<Omit<InteractionRow, "carrier_name"> & { carrier_id: string }> = [];
   if (load) {
     const [{ data: interactionRows }, { data: userData }] = await Promise.all([
       supabase
@@ -112,7 +118,7 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
         .order("created_at", { ascending: false }),
       supabase.auth.getUser(),
     ]);
-    const rows = (interactionRows ?? []) as Array<Omit<InteractionRow, "carrier_name"> & { carrier_id: string }>;
+    rows = (interactionRows ?? []) as Array<Omit<InteractionRow, "carrier_name"> & { carrier_id: string }>;
     if (rows.length > 0) {
       const { data: carrierRows } = await supabase
         .schema("data_foundation")
@@ -130,6 +136,46 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
         .eq("id", userData.user.id)
         .maybeSingle();
       canContact = ["administrator", "supply_chain_operations_manager", "transportation_planner"].includes(profile?.role ?? "");
+      canVerify = ["administrator", "compliance_analyst"].includes(profile?.role ?? "");
+    }
+
+    const { data: offerRows } = await supabase
+      .schema("transportation_shipment")
+      .from("carrier_offers")
+      .select("id, carrier_id, rate_dollars, confidence, evidence, status, counter_rate_dollars, decision_note, created_at")
+      .eq("load_id", load.id)
+      .eq("load_version", load.version)
+      .order("created_at", { ascending: false });
+    const offerList = (offerRows ?? []) as Array<Omit<OfferView, "carrier_name" | "compliance">>;
+    const carrierIds = Array.from(new Set([...offerList.map((o) => o.carrier_id), ...rows.map((r) => r.carrier_id)]));
+    if (carrierIds.length > 0) {
+      const [{ data: carrierRows }, { data: checkRows }] = await Promise.all([
+        supabase.schema("data_foundation").from("carriers").select("id, name").in("id", carrierIds),
+        supabase
+          .schema("operational_excellence_governance")
+          .from("carrier_compliance_checks")
+          .select("carrier_id, result, checked_at, source")
+          .in("carrier_id", carrierIds)
+          .gte("checked_at", new Date(Date.now() - freshnessHours() * 60 * 60 * 1000).toISOString())
+          .order("checked_at", { ascending: false }),
+      ]);
+      const names = Object.fromEntries((carrierRows ?? []).map((c) => [c.id as string, c.name as string]));
+      const latestCheck = new Map<string, { result: string; checked_at: string; source: string }>();
+      for (const c of checkRows ?? []) if (!latestCheck.has(c.carrier_id as string)) latestCheck.set(c.carrier_id as string, c as never);
+      offers = offerList.map((o) => {
+        const check = latestCheck.get(o.carrier_id);
+        return {
+          ...o,
+          carrier_name: names[o.carrier_id] ?? "Unknown carrier",
+          compliance: check
+            ? { state: check.result === "pass" ? "pass" : "block", checkedAt: check.checked_at, source: check.source }
+            : { state: "unverified", checkedAt: null, source: null },
+        };
+      });
+      const contactedIds = new Set(
+        rows.filter((r) => r.status === "sent" || r.status === "simulated").map((r) => r.carrier_id)
+      );
+      contactedCarriers = Array.from(contactedIds).map((id) => ({ id, name: names[id] ?? "Unknown carrier" }));
     }
   }
 
@@ -271,6 +317,19 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
                 mode={outreachSettings().mode}
                 canContact={canContact && (load.status === "sourcing" || load.status === "negotiating")}
                 interactions={interactions}
+              />
+            </section>
+          )}
+
+          {(offers.length > 0 || contactedCarriers.length > 0) && (
+            <section className="flex flex-col gap-6">
+              <h2 className="text-h5 text-grey-900">Negotiation (version {load.version})</h2>
+              <NegotiationPanel
+                loadId={load.id}
+                contactedCarriers={contactedCarriers}
+                offers={offers}
+                canNegotiate={canContact && (load.status === "sourcing" || load.status === "negotiating")}
+                canVerify={canVerify}
               />
             </section>
           )}

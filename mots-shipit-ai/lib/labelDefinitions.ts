@@ -50,6 +50,15 @@ export const LABEL_DEFINITIONS = {
   mcNumber: "The carrier's Motor Carrier (MC) operating authority number.",
   carrierSource: "Where the carrier record came from: seeded from the routing guide, or added manually.",
 
+  // Negotiation and compliance
+  carrierReply: "Paste the carrier's reply. ShipIt reads the price from it; replying STOP opts the carrier out.",
+  offerRate: "The all-in price the carrier asked for this load, in US dollars, read from their reply.",
+  offerConfidence: "How sure the AI is that it read the carrier's price correctly. Below the threshold, a person reviews it within 5 minutes.",
+  offerEvidence: "The carrier's exact words the price was taken from.",
+  offerStatus: "Proposed (waiting for you), countered, accepted, rejected, expired (the load changed) or blocked (above the rate ceiling).",
+  compliance: "The carrier's latest authority, insurance and safety check. No check in the last 24 hours, or a failed one, blocks approval.",
+  counterRate: "The all-in price you offer back to the carrier. It can't be above the load's rate ceiling.",
+
   // Outreach
   outreachMode: "Test mode never contacts real carriers: messages are simulated or go only to your test email or phone. Live mode contacts carriers' real contacts.",
   batchSize: "How many of the next-ranked carriers to contact now. Carriers already contacted for this load version are skipped.",

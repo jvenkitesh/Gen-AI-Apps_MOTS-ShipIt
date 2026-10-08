@@ -283,3 +283,69 @@ export async function contactBatch(params: {
     remainingCandidates: Math.max(0, remaining.length - contacted.length - skipped.length),
   };
 }
+
+// Sends one follow-up message (for example a counter-offer) to a carrier under the same
+// test/live rules as outreach, and logs it verbatim in carrier_interactions.
+export async function sendCarrierMessage(params: {
+  admin: SupabaseClient;
+  load: LoadRow;
+  carrierId: string;
+  body: string;
+  subject: string;
+  userId: string;
+}): Promise<{ status: "simulated" | "sent" | "failed" | "skipped"; recipient: string | null }> {
+  const { admin, load, carrierId, body, subject, userId } = params;
+  const settings = outreachSettings();
+
+  const { data: contactRows } = await admin
+    .schema("data_foundation")
+    .from("carrier_contacts")
+    .select("id, carrier_id, email, phone, preferred_channel, opt_out")
+    .eq("carrier_id", carrierId);
+  const contact = ((contactRows ?? []) as Contact[]).find((c) => !c.opt_out) ?? null;
+  const allOptedOut = (contactRows ?? []).length > 0 && !contact;
+
+  const { data: policy } = await admin
+    .schema("operational_excellence_governance")
+    .from("sourcing_policies")
+    .select("outreach_disclosure_text")
+    .eq("id", load.evaluated_policy_id ?? "00000000-0000-0000-0000-000000000000")
+    .maybeSingle();
+  const disclosure = (policy?.outreach_disclosure_text as string | undefined) || DEFAULT_DISCLOSURE;
+  const message = { subject, body: `${disclosure}\n\n${body}` };
+
+  const route = allOptedOut ? null : pickChannel(contact, settings.mode, settings);
+  let status: "simulated" | "sent" | "failed" | "skipped" = "skipped";
+  let reference: string | null = null;
+  let error: string | null = null;
+  let attempts = 0;
+  if (route) {
+    const sent = await sendWithOneRetry(channelFor(route.channel), route.recipient, message);
+    attempts = sent.attempts;
+    status = !sent.result.ok ? "failed" : sent.simulated ? "simulated" : "sent";
+    reference = sent.result.ok ? sent.result.channelReference : null;
+    error = sent.result.ok ? null : sent.result.error;
+  }
+
+  const { error: insertError } = await admin.schema("transportation_shipment").from("carrier_interactions").insert({
+    load_id: load.id,
+    load_version: load.version,
+    carrier_id: carrierId,
+    carrier_contact_id: contact?.id ?? null,
+    batch_id: crypto.randomUUID(),
+    direction: "outbound",
+    channel: route?.channel ?? "email",
+    outreach_mode: settings.mode,
+    status,
+    recipient: route?.recipient ?? null,
+    disclosure_text: disclosure,
+    message_text: message.body,
+    channel_reference: reference,
+    skip_reason: route ? null : allOptedOut ? "opted_out" : "no_contact",
+    error_message: error,
+    attempts,
+    sent_by: userId,
+  });
+  if (insertError) throw new Error(`Logging the message failed: ${insertError.message}`);
+  return { status, recipient: route?.recipient ?? null };
+}

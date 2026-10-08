@@ -50,6 +50,18 @@ Response (stale, 409): `{ "error": "compliance_data_stale", "lastCheckedAt": "..
 
 Offer cards show rate, terms, and confidence (plain percentage in `Data/Mono` for MVP; the Reports sub-theme's Confidence Score Badge pattern is an option later if that theme gets built out, not required now). Compliance status renders as a pass/block badge (Green/Red) with a link to the evidence bundle.
 
+## As built (Feature 6, 2026-10-08)
+
+- Tables (`supabase/carrier_offers_and_compliance.sql`): `transportation_shipment.carrier_offers` (negotiation ledger) and `operational_excellence_governance.carrier_compliance_checks`; carrier_interactions gains status `received` for inbound replies.
+- Carrier replies: inbound provider webhooks don't exist yet, so a user pastes the reply on `/loads/[id]` (`POST /api/loads/[id]/replies`). Replies starting with STOP opt the contact out.
+- Extraction (`lib/ai/offerExtractor.ts`, OpenAI): reads only the carrier's words (never the target rate or ceiling); the quoted evidence must appear verbatim in the reply or confidence is capped at 0.3. Below `OFFER_MIN_CONFIDENCE` (default 0.8) → `low_confidence_extraction` exception, high risk, 5-minute SLA; no offer is guessed.
+- Ceiling check in code: above the load's rate ceiling → offer `blocked` + `rate_above_ceiling` exception. Counters above the ceiling are refused.
+- `POST /api/offers/[id]/respond` (approve | counter | reject): stale-version and already-decided offers refused (409). Approval authority: administrator and operations manager unlimited; transportation planner only up to `sourcing_policies.approval_thresholds.approval_required_above_dollars` (unset → must escalate, 403). Compliance and viewer roles can't respond.
+- Approval runs a fresh compliance check at that moment (`lib/freight/compliance.ts`): a check within `COMPLIANCE_FRESHNESS_HOURS` (default 24), else an FMCSA QCMobile re-check when `FMCSA_WEB_KEY` and the carrier's USDOT number exist, else **blocked** (fail closed). A failed check blocks too.
+- `GET /api/carriers/[id]/compliance` (fresh 200 / stale 409) and `POST` for a manual check (compliance analyst, administrator).
+- Counter-offers are sent through the outreach channel rules (test mode → simulated or test recipient) and logged verbatim.
+- New load version: open offers for older versions expire; an already accepted older offer raises `load_changed_post_acceptance`.
+
 ## Edge cases
 
 - Carrier requests a term outside policy bounds → negotiation stops immediately, surfaces to the exception queue with the offer and context attached — never auto-approved outside the ceiling under any circumstance

@@ -15,7 +15,7 @@ export type InteractionRow = {
   carrier_name: string;
   channel: string;
   outreach_mode: "test" | "live";
-  status: "simulated" | "sent" | "failed" | "skipped";
+  status: "simulated" | "sent" | "failed" | "skipped" | "received";
   recipient: string | null;
   skip_reason: string | null;
   error_message: string | null;
@@ -23,7 +23,7 @@ export type InteractionRow = {
   created_at: string;
 };
 
-const STATUS_COLOR = { sent: "green", simulated: "blue", failed: "red", skipped: "grey" } as const;
+const STATUS_COLOR = { sent: "green", simulated: "blue", failed: "red", skipped: "grey", received: "violet" } as const;
 const SKIP_TEXT: Record<string, string> = {
   opted_out: "Carrier opted out",
   frequency_cap: "Contacted too often today",
