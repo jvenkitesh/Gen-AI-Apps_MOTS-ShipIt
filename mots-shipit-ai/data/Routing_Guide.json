@@ -1,5 +1,6 @@
 {
   "file_name": "routing_guide.json",
+  "geography": "NA",
   "origin_hub": "Memphis, TN",
   "routes": [
     { "state": "Alabama", "state_code": "AL", "gateway_city": "Birmingham", "street_address": "2201 1st Ave N", "zipcode": "35203", "corridor": "I-22 E", "distance_miles": 240, "transit_days": 1, "mode": "FTL", "transport": "Road", "carrier": "Trax", "freight_cost_dollars": 12.5 },
