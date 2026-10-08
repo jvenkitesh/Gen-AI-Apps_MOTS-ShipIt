@@ -64,6 +64,15 @@ Auth: required. Request: `{ "action": "approve"|"counter"|"reject"|"escalate", "
 
 Exception queue cards use the **SLA Countdown Badge** pattern from `docs/design.md` (Saffron while time remains, flips to Red once `slaDeadline` has passed). Each card shows the recommended action and a one-click approve/counter/reject where applicable.
 
+## As built (Feature 8, 2026-10-08)
+
+- `operational_excellence_governance.control_actions` (`supabase/control_actions.sql`): append-only; the latest pause/resume per (scope, scope_id) decides. Scope ids: load id, customer id, lane `TN-GA`, agent `outreach|negotiation|booking`, channel `email|sms`, null for global.
+- `lib/freight/controlPlane.ts` `assertNotPaused()` is called by outreach (`contactBatch`), negotiation (`recordCarrierReply`, `respondToOffer`) and booking (`commitBooking`) before any write → `409 PAUSED`. A paused channel skips those carriers (`channel_paused`) instead of failing the batch.
+- Control roles: administrator and supply_chain_operations_manager (the PRD's control-plane role). `GET/POST /api/control` (POST covers pause/resume/override/cancel).
+- Exceptions (`lib/freight/exceptions.ts`): open exceptions past their SLA are marked `breached` whenever the queue or dashboard is read (never dropped). `GET /api/exceptions` (soonest deadline first), `POST /api/exceptions/[id]/resolve` with `resolve` or `escalate` (escalate keeps it open at critical). Offer approve/counter/reject stays on the load page (linked from each card). Resolving never resumes a pause.
+- UI: `/exceptions` queue with live SLA countdown (Saffron → Red), `/dashboard` (breached SLA first, open exceptions, TMS sync pending, loads by status, active-pause banner), `/policies` (control plane + read-only sourcing policies; editing customers/policies in the app is a later admin screen).
+- Fix from testing: the outreach batch wait counts only messages actually sent or simulated, so a batch where everyone was skipped (e.g. channel paused) doesn't block the next one.
+
 ## Edge cases
 
 - An exception's SLA deadline passes with no human action → status flips to `breached` (not silently removed from the queue); the Operations Manager dashboard surfaces a "breached SLA" count prominently

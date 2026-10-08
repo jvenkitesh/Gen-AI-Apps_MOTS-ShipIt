@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { COMPLIANCE_REASON_TEXT, getFreshCompliance } from "@/lib/freight/compliance";
 import { tmsAdapter, type BookingRecord } from "@/lib/freight/tmsAdapter";
+import { assertNotPaused, ScopePausedError } from "@/lib/freight/controlPlane";
+import { getLoad } from "@/lib/freight/loadQueries";
 
 export class BookingError extends Error {
   constructor(message: string, readonly code: string, readonly httpStatus: number) {
@@ -67,6 +69,21 @@ export async function commitBooking(params: {
     .eq("load_id", loadId)
     .maybeSingle();
   if (!offer) throw new BookingError("Offer not found for this load.", "BOOKING_OFFER_NOT_FOUND", 404);
+
+  const load = await getLoad(admin, loadId);
+  if (!load) throw new BookingError("Load not found.", "BOOKING_LOAD_NOT_FOUND", 404);
+  try {
+    await assertNotPaused(admin, {
+      agent: "booking",
+      loadId: load.id,
+      customerId: load.customer_id,
+      originState: load.origin_state_code,
+      destinationState: load.destination_state_code,
+    });
+  } catch (err) {
+    if (err instanceof ScopePausedError) throw new BookingError(err.message, "PAUSED", 409);
+    throw err;
+  }
 
   const compliance = await getFreshCompliance(admin, offer.carrier_id as string);
   if (compliance.state === "stale") throw new BookingError(compliance.reason, "COMPLIANCE_UNAVAILABLE", 409);

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getLoad, type LoadRow } from "@/lib/freight/loadQueries";
 import { rankCandidates } from "@/lib/freight/rankCandidates";
 import { channelFor, type ChannelName, type OutreachChannel, type OutreachMessage } from "@/lib/freight/outreachChannels";
+import { activePauses, assertNotPaused, ScopePausedError } from "@/lib/freight/controlPlane";
 import { EQUIPMENT_LABELS, formatDateTimeUtc, formatPounds } from "@/lib/utils/format";
 
 export type OutreachMode = "test" | "live";
@@ -120,6 +121,22 @@ export async function contactBatch(params: {
     throw new OutreachBlockedError(`No outreach on a load that is ${load.status}.`, "LOAD_NOT_OPEN");
   }
 
+  try {
+    await assertNotPaused(admin, {
+      agent: "outreach",
+      loadId: load.id,
+      customerId: load.customer_id,
+      originState: load.origin_state_code,
+      destinationState: load.destination_state_code,
+    });
+  } catch (err) {
+    if (err instanceof ScopePausedError) throw new OutreachBlockedError(err.message, "PAUSED");
+    throw err;
+  }
+  const pausedChannels = new Set(
+    (await activePauses(admin)).filter((p) => p.scope === "channel").map((p) => p.scope_id)
+  );
+
   const { data: previous, error: previousError } = await admin
     .schema("transportation_shipment")
     .from("carrier_interactions")
@@ -130,8 +147,10 @@ export async function contactBatch(params: {
     .order("created_at", { ascending: false });
   if (previousError) throw new Error(`Reading previous outreach failed: ${previousError.message}`);
 
-  // Wait between batches so carriers aren't over-contacted.
-  const lastBatchAt = previous?.[0]?.created_at ? new Date(previous[0].created_at as string).getTime() : null;
+  // Wait between batches so carriers aren't over-contacted. Only messages that actually went
+  // out (sent or simulated) count; a batch where everyone was skipped doesn't start the wait.
+  const lastContact = (previous ?? []).find((p) => p.status === "sent" || p.status === "simulated");
+  const lastBatchAt = lastContact ? new Date(lastContact.created_at as string).getTime() : null;
   if (lastBatchAt) {
     const waitMs = settings.batchWaitMinutes * 60_000 - (Date.now() - lastBatchAt);
     if (waitMs > 0) {
@@ -203,6 +222,10 @@ export async function contactBatch(params: {
     const route = pickChannel(contact, settings.mode, settings);
     if (!route) {
       skipped.push({ carrierId: candidate.carrierId, carrierName: candidate.name, channel: null, status: "skipped", recipient: null, channelReference: null, reason: "no_contact" });
+      continue;
+    }
+    if (pausedChannels.has(route.channel)) {
+      skipped.push({ carrierId: candidate.carrierId, carrierName: candidate.name, channel: route.channel, status: "skipped", recipient: null, channelReference: null, reason: "channel_paused" });
       continue;
     }
 

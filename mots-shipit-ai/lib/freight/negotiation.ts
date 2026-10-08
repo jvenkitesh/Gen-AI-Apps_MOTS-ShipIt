@@ -3,6 +3,7 @@ import { extractOfferFromReply } from "@/lib/ai/offerExtractor";
 import { getFreshCompliance, COMPLIANCE_REASON_TEXT } from "@/lib/freight/compliance";
 import { getLoad, type LoadRow } from "@/lib/freight/loadQueries";
 import { sendCarrierMessage } from "@/lib/freight/outreach";
+import { assertNotPaused, ScopePausedError } from "@/lib/freight/controlPlane";
 import type { UserRole } from "@/types/userRole";
 
 export class NegotiationError extends Error {
@@ -58,6 +59,18 @@ async function requireOpenLoad(supabase: SupabaseClient, loadId: string): Promis
   if (!load) throw new NegotiationError("Load not found.", "NOT_FOUND", 404);
   if (!OPEN_LOAD_STATUSES.has(load.status)) {
     throw new NegotiationError(`Negotiation is closed: the load is ${load.status}.`, "LOAD_NOT_OPEN", 409);
+  }
+  try {
+    await assertNotPaused(supabase, {
+      agent: "negotiation",
+      loadId: load.id,
+      customerId: load.customer_id,
+      originState: load.origin_state_code,
+      destinationState: load.destination_state_code,
+    });
+  } catch (err) {
+    if (err instanceof ScopePausedError) throw new NegotiationError(err.message, "PAUSED", 409);
+    throw err;
   }
   return load;
 }

@@ -62,6 +62,14 @@ export const LABEL_DEFINITIONS = {
   tmsSync: "Whether the booking has been written back to your TMS: pending, synced or failed. A failed sync never cancels the booking; retry it.",
   bookCarrier: "Commits the load to this carrier. Compliance and the rate ceiling are re-checked first, and a load can only be booked once.",
 
+  // Exceptions, dashboard and control plane
+  slaCountdown: "Time left before this exception breaches its deadline. Saffron while time remains, red once it has passed.",
+  breachedExceptions: "Exceptions nobody handled before their deadline. They stay in the queue until someone resolves them.",
+  openExceptions: "Problems waiting for a person, soonest deadline first.",
+  activePauses: "Parts of the automation that are stopped right now. Outreach, negotiation and booking check these before every action.",
+  controlScope: "What the action applies to: everything (global), one customer, one load, one lane (origin-destination states), one agent (outreach, negotiation or booking) or one channel (email or SMS).",
+  tmsSyncFailures: "Bookings that haven't been written back to the TMS yet. The carrier commitment stands; retry the sync on the load page.",
+
   // Outreach
   outreachMode: "Test mode never contacts real carriers: messages are simulated or go only to your test email or phone. Live mode contacts carriers' real contacts.",
   batchSize: "How many of the next-ranked carriers to contact now. Carriers already contacted for this load version are skipped.",
