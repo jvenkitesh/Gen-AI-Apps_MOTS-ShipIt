@@ -5,6 +5,9 @@ import { Card } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { FormMessage } from "@/components/auth/FormMessage";
 import { LoadStatusBadge } from "@/components/loads/LoadStatusBadge";
+import { CarrierCandidates } from "@/components/loads/CarrierCandidates";
+import type { CandidateList } from "@/lib/freight/carrierRanking";
+import { rankCandidates } from "@/lib/freight/rankCandidates";
 import { createClient } from "@/lib/supabase/server";
 import { customerNames, getLoad, type LoadRow } from "@/lib/freight/loadQueries";
 import { REASON_CODE_TEXT } from "@/lib/freight/policyEngine";
@@ -80,6 +83,19 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
   }
 
   if (!loadError && !load) notFound();
+
+  let ranking: CandidateList | null = null;
+  let rankingNote = "";
+  if (load && (load.status === "sourcing" || load.status === "negotiating")) {
+    try {
+      ranking = await rankCandidates(supabase, load.id);
+    } catch (err) {
+      console.error("[load detail ranking]", err instanceof Error ? err.message : err);
+      rankingNote = "Carrier candidates couldn't be ranked right now. Please try again.";
+    }
+  } else if (load) {
+    rankingNote = "Carriers are ranked only for loads that passed the policy engine. Resolve the exception first.";
+  }
 
   return (
     <main className="flex w-full flex-col gap-10 px-4 py-12 sm:px-16">
@@ -202,9 +218,13 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
             )}
           </section>
 
-          <section className="flex flex-col gap-2">
-            <h2 className="text-h5 text-grey-900">Carrier candidates and offers</h2>
-            <p className="text-body-sm text-grey-500">Ranked carriers and negotiation offers appear here once carrier ranking and negotiation are built.</p>
+          <section className="flex flex-col gap-6">
+            <h2 className="text-h5 text-grey-900">Carrier candidates</h2>
+            {ranking ? (
+              <CarrierCandidates result={ranking} />
+            ) : (
+              <p className="text-body-sm text-grey-500">{rankingNote}</p>
+            )}
           </section>
         </>
       )}

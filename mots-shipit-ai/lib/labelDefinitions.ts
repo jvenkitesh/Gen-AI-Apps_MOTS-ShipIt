@@ -35,6 +35,20 @@ export const LABEL_DEFINITIONS = {
   rateBounds: "The minimum target rate and maximum rate ceiling this customer allows, in US dollars.",
   exceptions: "Problems that need a person to decide, with the deadline (SLA) to resolve them.",
   slaDeadline: "The time by which a person should resolve this exception.",
+
+  // Carriers and ranking
+  carrierCandidates: "Carriers that passed every filter for this load, best match first.",
+  excludedCarriers: "Carriers filtered out for this load, with the reason. Shown so nothing is hidden.",
+  matchScore: "How well the carrier fits this load, from 0 to 1: lane, origin hub, tier, equipment and recent bookings.",
+  carrierTier: "Your rating of the carrier: preferred, approved, probationary or blocked. The sourcing policy lists which tiers may be used.",
+  rankingReasons: "Why the carrier scored the way it did.",
+  carrierName: "The carrier's legal name.",
+  carrierModes: "Shipping modes the carrier runs on your lanes: FTL (full truckload), LTL (less than truckload) or Intermodal.",
+  transportTypes: "How the carrier moves freight: road, rail or both.",
+  equipmentTypes: "Trailer types the carrier provides: dry van or reefer. Empty means not on file yet.",
+  usdotNumber: "The carrier's US Department of Transportation number.",
+  mcNumber: "The carrier's Motor Carrier (MC) operating authority number.",
+  carrierSource: "Where the carrier record came from: seeded from the routing guide, or added manually.",
   riskLevel: "How serious the problem is: low, medium, high or critical.",
 } as const;
 

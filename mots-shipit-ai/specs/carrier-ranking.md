@@ -26,7 +26,15 @@ Ranking inputs (no ML model at MVP — deterministic scoring, upgradeable later 
 3. Equipment match (`dry_van`/`reefer`)
 4. Service history recency (`carriers.service_history` jsonb — most recent successful booking weighted higher)
 
-`Routing_Guide.json` is read directly as a static file (not duplicated into a DB table) via a module-level cache in `lib/estimate/routingGuide.ts` (the same loader the estimate chatbot uses — one source of truth, one file read).
+## As built (Feature 4, 2026-10-08)
+
+- Carrier master: `data_foundation.carriers` (+ `carrier_contacts`), seeded from the distinct carriers in `transportation_shipment.routing_guide` (`supabase/carriers.sql`). Seeded rows: tier `approved`, no USDOT/MC, empty `equipment_types`.
+- Lane context comes from the `transportation_shipment.routing_guide` table (not the JSON file): a carrier is a candidate only if the routing guide enables it for the load's destination state.
+- Scoring (`lib/freight/carrierRanking.ts`, weights sum to 1.0): lane match 0.45, origin hub state match 0.10, tier (preferred 0.25 / approved 0.18 / probationary 0.08), equipment match 0.10 (empty equipment = `equipment_unverified`, no points, not excluded), service history (booked ≤30 days 0.10, ≤90 days 0.05).
+- Exclusions: `carrier_inactive`, `tier_blocked`, `policy_has_no_carrier_tiers`, `tier_not_allowed`, `not_in_routing_guide_for_lane`, `equipment_mismatch`.
+- Only loads with status `sourcing`/`negotiating` are ranked (`409 LOAD_NOT_ELIGIBLE` otherwise). Zero candidates raises one open `no_candidates` exception per load version (high risk, 4-hour SLA).
+- UI: candidate cards on `/loads/[id]` (excluded carriers greyed inline with reasons) and a `/carriers` directory.
+- Test data: `supabase/seed_test_customer.sql` creates "Test Customer (demo)" with an active policy (TN → any state, dry van + reefer, preferred/approved tiers, $100–$10,000).
 
 ## API contract
 
