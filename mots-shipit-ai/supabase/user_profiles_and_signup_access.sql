@@ -107,3 +107,11 @@ create trigger create_user_profile
   for each row execute function data_foundation.handle_new_user();
 
 commit;
+
+-- Added later as migration add_test_member_flag_to_allowed_signup_emails:
+-- test members skip email confirmation (server creates the account already confirmed).
+alter table data_foundation.allowed_signup_emails
+  add column if not exists is_test_member boolean not null default false;
+comment on column data_foundation.allowed_signup_emails.is_test_member is
+  'Test members skip the email confirmation step: the server creates their account already confirmed. Never set this for real users.';
+update data_foundation.allowed_signup_emails set is_test_member = true where email = 'jyotis.sqa@gmail.com';

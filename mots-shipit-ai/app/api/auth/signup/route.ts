@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { firstIssueMessage, signupSchema } from "@/lib/security/inputValidator";
 import { appOrigin } from "@/lib/utils/redirects";
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/security/rateLimiter";
+import { createConfirmedTestMember, isTestMember } from "@/lib/security/testMembers";
 
 export async function POST(request: Request) {
   const rateLimit = await checkRateLimit(`ip:${getClientIp(request)}`, "auth");
@@ -18,6 +19,29 @@ export async function POST(request: Request) {
 
   const { fullName, email, password } = parsed.data;
   const supabase = createClient();
+
+  if (await isTestMember(email)) {
+    const created = await createConfirmedTestMember({ email, password, fullName });
+    if (!created.ok && created.reason === "already_registered") {
+      return NextResponse.json(
+        { error: "EMAIL_ALREADY_REGISTERED", message: "An account with this email already exists. Log in instead." },
+        { status: 409 }
+      );
+    }
+    if (!created.ok) {
+      return NextResponse.json(
+        { error: "SIGNUP_FAILED", message: "Something went wrong creating your account. Please try again." },
+        { status: 500 }
+      );
+    }
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInError) {
+      console.error("[signup] test member created but sign-in failed:", signInError.code, signInError.message);
+      return NextResponse.json({ message: "Your account is ready. Log in to continue." }, { status: 201 });
+    }
+    return NextResponse.json({ message: "Your test account is ready.", signedIn: true }, { status: 201 });
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,

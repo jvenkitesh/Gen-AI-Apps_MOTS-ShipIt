@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { LOADING_TEXT } from "@/components/ui/LoadingIndicator";
 import { FormField } from "@/components/auth/FormField";
@@ -8,6 +9,7 @@ import { FormMessage } from "@/components/auth/FormMessage";
 import { useJsonForm } from "@/lib/hooks/useJsonForm";
 
 export function SignupForm() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,7 +17,12 @@ export function SignupForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    await submit({ fullName, email, password });
+    const result = await submit({ fullName, email, password });
+    // Test members are created already confirmed and signed in, so skip the "check your email" step.
+    if (result.ok && result.data?.signedIn === true) {
+      router.push("/dashboard");
+      router.refresh();
+    }
   }
 
   if (success) {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type SubmitResult = { ok: boolean; status: number; message?: string };
+type SubmitResult = { ok: boolean; status: number; message?: string; data?: Record<string, unknown> | null };
 
 // Posts JSON to an API route and tracks submitting / error / success message state.
 export function useJsonForm(endpoint: string) {
@@ -20,13 +20,13 @@ export function useJsonForm(endpoint: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const json = (await res.json().catch(() => null)) as { message?: string } | null;
+      const json = (await res.json().catch(() => null)) as ({ message?: string } & Record<string, unknown>) | null;
       if (res.ok) {
         if (json?.message) setSuccess(json.message);
       } else {
         setError(json?.message ?? "Something went wrong. Please try again.");
       }
-      return { ok: res.ok, status: res.status, message: json?.message };
+      return { ok: res.ok, status: res.status, message: json?.message, data: json };
     } catch {
       setError("Can't reach the server. Check your connection and try again.");
       return { ok: false, status: 0 };
