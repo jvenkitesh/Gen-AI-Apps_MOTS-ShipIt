@@ -54,6 +54,16 @@ Errors: `409` if the load is already booked **by a different offer** (a genuine 
 
 Successful booking triggers a Green success toast (core system's existing Success state — no new pattern). The load detail page shows `tmsSyncStatus` (`pending` / `synced` / `failed`) as a small status chip; `failed` renders in Red with a manual "retry sync" action for the admin.
 
+## As built (Feature 7, 2026-10-08)
+
+- Table `transportation_shipment.carrier_bookings` (`supabase/carrier_bookings.sql`): `idempotency_key` UNIQUE plus a partial unique index allowing one `active` booking per load — the database, not app code, prevents double booking.
+- `transportation_shipment.commit_booking()` (service role only) does every check and write in one transaction with the load row locked: idempotent replay, already booked, offer belongs to the load, load version unchanged, load open, offer accepted, rate within ceiling; then inserts the booking, marks the load `booked` and closes all other open offers.
+- `lib/freight/booking.ts` re-checks compliance at the moment of booking (fail closed) before calling the function. Database errors map to clear 404/409/422 messages.
+- TMS write-back: `lib/freight/tmsAdapter.ts` `GenericTmsAdapter` POSTs `{ event: "booking.created", booking }` to `TMS_BOOKING_WEBHOOK_URL`, signed `X-ShipIt-Signature: sha256=<HMAC of body with TMS_WEBHOOK_SECRET>`, with `Idempotency-Key` = booking id. Failure → `tms_sync_status = failed` + reason; the booking is never rolled back. Retry: `POST /api/bookings/[id]/sync` (administrator, operations manager).
+- UI: "Book this carrier" on accepted offers (needs a passing compliance check; one idempotency key per offer per page so double clicks can't double book); Booking panel with TMS sync chip and "Retry TMS sync".
+- Audit events are added with Feature 9 (audit log).
+- Verified: two simultaneous bookings → one created, one `BOOKING_ALREADY_BOOKED`; retry with the winning key → same booking (`existing`); load `booked`, other offers closed; TMS not connected → `failed`; retry against a mock TMS → `synced`, signature verified.
+
 ## Edge cases
 
 - Two near-simultaneous booking requests for the same load (e.g. a race between manual approval and an autonomous rule, once that exists) → the `idempotency_key` UNIQUE constraint at the DB level is the real guard, not application-level locking. The PRD explicitly flags double-booking as Critical severity (C7 risk table) — this constraint is the actual fix, not a nice-to-have.

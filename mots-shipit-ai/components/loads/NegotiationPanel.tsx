@@ -50,13 +50,18 @@ export function NegotiationPanel({
   offers,
   canNegotiate,
   canVerify,
+  canBook,
 }: {
   loadId: string;
   contactedCarriers: Array<{ id: string; name: string }>;
   offers: OfferView[];
   canNegotiate: boolean;
   canVerify: boolean;
+  canBook: boolean;
 }) {
+  // One idempotency key per offer for the life of the page, so a double click or a retry
+  // after a network error can never create a second booking.
+  const [bookingKeys] = useState<Record<string, string>>({});
   const router = useRouter();
   const [carrierId, setCarrierId] = useState(contactedCarriers[0]?.id ?? "");
   const [replyText, setReplyText] = useState("");
@@ -92,6 +97,17 @@ export function NegotiationPanel({
     setBusy(null);
     if (!ok) return setMessage({ tone: "error", text: String(json?.message ?? "The offer couldn't be updated.") });
     setMessage({ tone: "success", text: action === "approve" ? "Offer accepted." : action === "counter" ? "Counter-offer sent." : "Offer rejected." });
+    router.refresh();
+  }
+
+  async function book(offerId: string) {
+    bookingKeys[offerId] ??= crypto.randomUUID();
+    setBusy(`book-${offerId}`);
+    setMessage(null);
+    const { ok, json } = await postJson(`/api/loads/${loadId}/book`, { offerId, idempotencyKey: bookingKeys[offerId] });
+    setBusy(null);
+    if (!ok) return setMessage({ tone: "error", text: String(json?.message ?? "The booking couldn't be completed.") });
+    setMessage({ tone: "success", text: "Load booked. The booking is being written back to the TMS." });
     router.refresh();
   }
 
@@ -208,6 +224,15 @@ export function NegotiationPanel({
                         {busy === `verify-${o.carrier_id}` ? LOADING_TEXT : "Save check"}
                       </Button>
                     </div>
+                  </div>
+                )}
+
+                {canBook && o.status === "accepted" && (
+                  <div className="flex flex-wrap items-center gap-2 border-t border-grey-100 pt-3">
+                    <Button onClick={() => book(o.id)} disabled={busy !== null || o.compliance.state !== "pass"}>
+                      {busy === `book-${o.id}` ? LOADING_TEXT : "Book this carrier"}
+                    </Button>
+                    <span className="text-body-sm text-grey-500"><Label text="What booking does" definition="bookCarrier" /></span>
                   </div>
                 )}
 

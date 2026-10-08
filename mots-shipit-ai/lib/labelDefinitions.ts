@@ -59,6 +59,9 @@ export const LABEL_DEFINITIONS = {
   compliance: "The carrier's latest authority, insurance and safety check. No check in the last 24 hours, or a failed one, blocks approval.",
   counterRate: "The all-in price you offer back to the carrier. It can't be above the load's rate ceiling.",
 
+  tmsSync: "Whether the booking has been written back to your TMS: pending, synced or failed. A failed sync never cancels the booking; retry it.",
+  bookCarrier: "Commits the load to this carrier. Compliance and the rate ceiling are re-checked first, and a load can only be booked once.",
+
   // Outreach
   outreachMode: "Test mode never contacts real carriers: messages are simulated or go only to your test email or phone. Live mode contacts carriers' real contacts.",
   batchSize: "How many of the next-ranked carriers to contact now. Carriers already contacted for this load version are skipped.",

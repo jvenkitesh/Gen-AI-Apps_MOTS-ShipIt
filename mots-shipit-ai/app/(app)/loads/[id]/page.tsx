@@ -12,6 +12,7 @@ import { OutreachPanel, type InteractionRow } from "@/components/loads/OutreachP
 import { outreachSettings } from "@/lib/freight/outreach";
 import { NegotiationPanel, type OfferView } from "@/components/loads/NegotiationPanel";
 import { freshnessHours } from "@/lib/freight/compliance";
+import { BookingPanel, type BookingView } from "@/components/loads/BookingPanel";
 import { createClient } from "@/lib/supabase/server";
 import { customerNames, getLoad, type LoadRow } from "@/lib/freight/loadQueries";
 import { REASON_CODE_TEXT } from "@/lib/freight/policyEngine";
@@ -107,6 +108,21 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
   let offers: OfferView[] = [];
   let contactedCarriers: Array<{ id: string; name: string }> = [];
   let rows: Array<Omit<InteractionRow, "carrier_name"> & { carrier_id: string }> = [];
+  let booking: BookingView | null = null;
+  let canRetrySync = false;
+  if (load) {
+    const { data: bookingRow } = await supabase
+      .schema("transportation_shipment")
+      .from("carrier_bookings")
+      .select("id, carrier_id, rate_dollars, load_version, tms_sync_status, tms_external_reference, tms_sync_attempts, tms_last_error, booked_at")
+      .eq("load_id", load.id)
+      .eq("status", "active")
+      .maybeSingle();
+    if (bookingRow) {
+      const { data: bookedCarrier } = await supabase.schema("data_foundation").from("carriers").select("name").eq("id", bookingRow.carrier_id).maybeSingle();
+      booking = { ...(bookingRow as Omit<BookingView, "carrier_name">), carrier_name: (bookedCarrier?.name as string) ?? "Unknown carrier" };
+    }
+  }
   if (load) {
     const [{ data: interactionRows }, { data: userData }] = await Promise.all([
       supabase
@@ -137,6 +153,7 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
         .maybeSingle();
       canContact = ["administrator", "supply_chain_operations_manager", "transportation_planner"].includes(profile?.role ?? "");
       canVerify = ["administrator", "compliance_analyst"].includes(profile?.role ?? "");
+      canRetrySync = ["administrator", "supply_chain_operations_manager"].includes(profile?.role ?? "");
     }
 
     const { data: offerRows } = await supabase
@@ -321,6 +338,13 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
             </section>
           )}
 
+          {booking && (
+            <section className="flex flex-col gap-6">
+              <h2 className="text-h5 text-grey-900">Booking</h2>
+              <BookingPanel booking={booking} canRetrySync={canRetrySync} />
+            </section>
+          )}
+
           {(offers.length > 0 || contactedCarriers.length > 0) && (
             <section className="flex flex-col gap-6">
               <h2 className="text-h5 text-grey-900">Negotiation (version {load.version})</h2>
@@ -330,6 +354,7 @@ export default async function LoadDetailPage({ params }: { params: { id: string 
                 offers={offers}
                 canNegotiate={canContact && (load.status === "sourcing" || load.status === "negotiating")}
                 canVerify={canVerify}
+                canBook={canContact && !booking && (load.status === "sourcing" || load.status === "negotiating")}
               />
             </section>
           )}
