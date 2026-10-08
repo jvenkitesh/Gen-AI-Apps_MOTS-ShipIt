@@ -308,7 +308,7 @@ Supabase (PostgreSQL + Auth + Storage + RLS). **New Supabase project** for MOTS 
 
 ## 8. AI Architecture
 
-**LLM provider:** Anthropic Claude, model cascade — a larger/more capable model for negotiation (FR-08), critical term extraction (FR-07), and composing the load-estimate chatbot's answer across 3 KBs (tool-calling); a smaller/faster model for summarization and exception classification. Exact model versions chosen at implementation time (pick current models, not hardcoded here, so this doc doesn't go stale).
+**LLM provider:** OpenAI (changed from Anthropic Claude on 2026-10-08 at the user's request, reusing the ContractIQ project's OpenAI account). The load-estimate chatbot uses `OPENAI_MODEL` (default `gpt-4o-mini`) only to word the answer; every number is computed in code. Original plan, still applicable to later features with OpenAI models: model cascade — a larger/more capable model for negotiation (FR-08), critical term extraction (FR-07), and composing the load-estimate chatbot's answer across 3 KBs (tool-calling); a smaller/faster model for summarization and exception classification. Exact model versions chosen at implementation time (pick current models, not hardcoded here, so this doc doesn't go stale).
 
 **Prompt strategy (per the PRD's own explicit guidance):**
 - Separate prompts by role: conversation, extraction, exception classification, summary, estimate-composition — never one general-purpose prompt for the whole workflow
@@ -500,7 +500,7 @@ Gen-AI-Apps_MOTS-ShipIt/
 |---|---|---|
 | Database | Supabase (new project, created when user is ready) | Fixed by this framework's tooling (RLS/SQL generation) |
 | Auth | Supabase Auth | Pairs natively with Supabase; SSO deferred to later phase |
-| LLM provider | Anthropic Claude, model cascade | Matches PRD's own cost-control guidance; native to this environment |
+| LLM provider | OpenAI (was Anthropic Claude; changed 2026-10-08 by the user) | Reuses the ContractIQ project's OpenAI account |
 | Voice/telephony | Deferred for MVP — pluggable channel interface | Matches PRD's phased rollout (shadow mode = 0% live voice); avoids vendor lock-in before legal sign-off |
 | TMS integration | Generic adapter interface | PRD itself lists "which TMS" as an unresolved open question |
 | Hosting | Netlify (new site, separate from the sibling ContractIQ project's site) | User's own direction; matches the proven playbook from the sibling build |

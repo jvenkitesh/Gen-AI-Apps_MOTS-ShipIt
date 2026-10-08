@@ -66,8 +66,10 @@ export async function resolveEstimate(rawQuery: string, userId: string): Promise
 // 3. Promise.allSettled([lookupRoute, getRateEstimate, maybe lookupTerm])
 // 4. If getRateEstimate failed/timed out: compose a transit-time-only answer,
 //    note "cost estimate unavailable right now" -- never fabricate a $ figure
-// 5. Call Claude (lib/ai/estimateComposer.ts) with the 3 tool results to produce
-//    the final cited answer in the EstimateAnswer schema below
+// 5. Compute every number in code (best choice = cheaper of the routing guide's
+//    freight_cost_dollars and ShipStation's cheapest total), then call OpenAI
+//    (lib/ai/estimateComposer.ts, OPENAI_MODEL, default gpt-4o-mini) to write only the
+//    summary sentence; a template summary is used if OpenAI is unavailable
 // 6. On a cache miss: INSERT into transportation_shipment.load_transit_freight_amount
 //    (cheapest ShipStation rate + all rates + matching routing guide entry), then
 //    upsertEstimate(...) into load_estimate_cache (expires_at = now() + 24 hours)
