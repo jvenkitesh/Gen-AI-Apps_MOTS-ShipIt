@@ -34,10 +34,12 @@ export async function upsertEstimate(
 ): Promise<void>;
 
 // lib/estimate/routingGuide.ts
-export function lookupRoute(zipOrState: string): RouteRecord | null;
-// RouteRecord = { state, state_code, gateway_city, street_address, zipcode,
-//                 corridor, distance_miles, transit_days, mode, transport,
-//                 carrier, weight_lbs, weight_tier? }
+export function lookupRoutingGuideEntry(zipOrState: string): RoutingGuideEntry | null;
+// RoutingGuideEntry = { state, state_code, gateway_city, street_address, zipcode,
+//                       corridor, distance_miles, transit_days, mode, transport,
+//                       carrier, freight_cost_dollars, weight_break? }
+// freight_cost_dollars is the freight cost in dollars for that ship-to/carrier,
+// NOT a shipment weight -- never pass it to ShipStation as weightLbs.
 
 // lib/estimate/shipstation.ts
 export async function getRateEstimate(
