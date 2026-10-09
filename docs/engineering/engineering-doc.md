@@ -394,7 +394,7 @@ All routes wrapped in `requireAuth()`; all mutating routes validated against cen
 ## 11. Folder Structure
 
 ```
-Gen-AI-Apps_MOTS-ShipIt/
+gen-ai-apps-mots-shipit-ai/
 ├── mots-shipit-ai/               # Next.js app — own subfolder, mirrors sibling ContractIQ (`contractiq/`)
 │   ├── app/                      # App Router — no src/ wrapper
 │   │   ├── (auth)/

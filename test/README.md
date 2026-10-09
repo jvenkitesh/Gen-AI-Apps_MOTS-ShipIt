@@ -50,7 +50,7 @@ npx playwright show-trace test-results/.../trace.zip           # debug a browser
 ### Against the live site (Stage 6 smoke test)
 
 ```bash
-export TEST_APP_URL=https://gen-ai-apps-mots-shipit-ai.netlify.app
+export TEST_APP_URL=https://mots-shipit.ai   # until the domain is attached: https://gen-ai-apps-mots-shipit-ai.netlify.app
 npx vitest run --project integration auth/auth-login auth/auth-roles estimate/ loads/ negotiation/ control/ exceptions/ audit/ security/
 npx playwright test
 ```

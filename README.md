@@ -1,4 +1,4 @@
-# Gen-AI-Apps_MOTS-ShipIt
+# gen-ai-apps-mots-shipit-ai
 
 A structured AI-assisted development operating system for building production-ready apps — from idea to deployed product using a stage-gated workflow enforced through Claude Code skills.
 
@@ -6,7 +6,7 @@ A structured AI-assisted development operating system for building production-re
 
 ## What This Is
 
-`Gen-AI-Apps_MOTS-ShipIt` is a Claude Code project that provides a repeatable, stage-by-stage workflow for building full-stack web applications. Each stage has a dedicated skill that Claude runs when invoked. No stage begins until the previous one is approved.
+`gen-ai-apps-mots-shipit-ai` (GitHub `jvenkitesh/gen-ai-apps-mots-shipit-ai`, Netlify project `gen-ai-apps-mots-shipit-ai`, live at https://mots-shipit.ai) is a Claude Code project that provides a repeatable, stage-by-stage workflow for building full-stack web applications. Each stage has a dedicated skill that Claude runs when invoked. No stage begins until the previous one is approved.
 
 The current application target is **MOTS ShipIt** — an agentic workflow platform for U.S. freight brokers that sources, negotiates with, verifies, and books carriers for approved loads with minimal human touch.
 
@@ -15,7 +15,7 @@ The current application target is **MOTS ShipIt** — an agentic workflow platfo
 ## Folder Structure
 
 ```
-Gen-AI-Apps_MOTS-ShipIt/
+gen-ai-apps-mots-shipit-ai/
 ├── CLAUDE.md                     # Project instructions & stage-gated workflow rules
 ├── netlify.toml                  # Netlify build config (base = "mots-shipit-ai")
 ├── mots-shipit-ai/               # The Next.js 14 app (App Router, TypeScript, Tailwind)
