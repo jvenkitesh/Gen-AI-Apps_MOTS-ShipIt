@@ -1,6 +1,6 @@
 # MOTS ShipIt Build Playbook: Final Copy (Stages 1 to 7, 2026-10-08)
 
-**Status:** all seven stages and the close-out are done. MOTS ShipIt is live at https://gen-ai-apps-mots-shipit-ai.netlify.app, 195 automated tests pass, and the last stage tag is `stage-7-complete`.
+**Status:** all seven stages and the close-out are done. MOTS ShipIt is live at https://gen-ai-apps-mots-shipit-ai.netlify.app, 195 automated tests pass, the last stage tag is `stage-7-complete`, and the final state is tagged `stage-7-final-2026-10-08`.
 
 **What this document is for:** it is the guide for building the next app of this kind with Claude, end to end, without re-inventing the steps. Part 1 is the playbook: the pipeline, the rules, every question with its answer, and step-by-step runbooks for each stage and for the close-out. It covers this build and the ContractIQ build before it (session log of 2026-10-08), so both can be replayed from here. Part 2 is the full record of this build. Part 3 is the reflection. Part 4 is the go-live list and the references.
 
@@ -306,6 +306,8 @@ Paste into a new Claude Code session in the new repo, with the brackets filled i
 | 20:23 | Playbook verified against ContractIQ log | febb9cd | stage-7-playbook-final-copy-verified-2026-10-08 |
 | 20:29 | GitHub repo renamed to gen-ai-apps-mots-shipit-ai; docs updated | 765cdaf | |
 | 20:48 | Live address kept on netlify.app; defects documented | 7fcb60d | stage-7-renames-and-defects-documented-2026-10-08 |
+| 20:52 | Repo copy of the playbook synced with the Doc | 967c1b8 | |
+| 21:08 | Final tag on 967c1b8 | 967c1b8 | stage-7-final-2026-10-08 |
 
 Pull requests: #1 file-name standardization, #2 Stage 3 scaffold, #3 Stage 7 security. All merged.
 
@@ -410,6 +412,9 @@ create_transportation_shipment_routing_guide · seed_transportation_shipment_rou
 - The first playbook Doc was uploaded from HTML; a horizontal-line tag and a list nested inside a numbered list rendered badly, and the Docs editing connector was not available to fix it in place.
 - The user asked for a final copy with very detailed steps, every question answered and a reflection; it was uploaded as a new Doc, the draft was renamed superseded and then trashed at the user's request.
 - The user then asked to verify the final copy against this session and the ContractIQ log; ten missing items were added (close-out runbook, risks log, Netlify function time limit, advisor findings table, course lab mapping and stage-order note, dashboard working mode, secrets-in-Netlify answer, tag naming, middleware and prompt details, Drive upload rules).
+- The renamed laptop folder was checked from its new path: git in sync with `jvenkitesh/gen-ai-apps-mots-shipit-ai`, 103 unit tests and the type check passing. Claude's project memory was copied to the new path; start Claude Code from the new folder.
+- At the user's request, the superseded playbook Docs were moved to the Drive trash; this Doc is the only playbook copy in the folder. The original Stages 1-4 session log remains.
+- The final state was tagged `stage-7-final-2026-10-08` and pushed. The session log was then updated once more (this version).
 - A side note the user sent with /btw could not be seen from this session; /btw messages are not shared with the main conversation, so paste such notes into the chat.
 
 ## 2.13 Last-minute defects (found by the user after the playbook was written)
