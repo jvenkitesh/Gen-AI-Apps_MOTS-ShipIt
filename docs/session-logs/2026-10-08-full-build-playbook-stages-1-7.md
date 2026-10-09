@@ -1,8 +1,8 @@
 # MOTS ShipIt Build Playbook: Final Copy (Stages 1 to 7, 2026-10-08)
 
-**Status:** all seven stages are done. MOTS ShipIt is live at https://gen-ai-apps-mots-shipit-ai.netlify.app, 195 automated tests pass, and the last stage tag is `stage-7-complete`.
+**Status:** all seven stages and the close-out are done. MOTS ShipIt is live at https://gen-ai-apps-mots-shipit-ai.netlify.app, 195 automated tests pass, and the last stage tag is `stage-7-complete`.
 
-**What this document is for:** it is the guide for building the next app of this kind with Claude, end to end, without re-inventing the steps. Part 1 is the playbook: the pipeline, the rules, every question with its answer, and step-by-step runbooks for each stage. Part 2 is the full record of this build. Part 3 is the reflection. Part 4 is the go-live list and the references.
+**What this document is for:** it is the guide for building the next app of this kind with Claude, end to end, without re-inventing the steps. Part 1 is the playbook: the pipeline, the rules, every question with its answer, and step-by-step runbooks for each stage and for the close-out. It covers this build and the ContractIQ build before it (session log of 2026-10-08), so both can be replayed from here. Part 2 is the full record of this build. Part 3 is the reflection. Part 4 is the go-live list and the references.
 
 **Project facts:** repo github.com/jvenkitesh/Gen-AI-Apps_MOTS-ShipIt · app folder `mots-shipit-ai/` · tests `test/` · Supabase project `mots-shipit-ai` (ref `gunsbekosmitvudjpmgg`, us-east-2, free plan) · Netlify project `gen-ai-apps-mots-shipit-ai` · sibling project ContractIQ (`Gen-AI-Apps_MOTS_contract_scout_ai`), whose session log set the step order.
 
@@ -21,6 +21,7 @@
 | 5 Testing | Built features | Writes unit, live API and browser tests; fixes what they find | `test/` suite, all passing | Tag `stage-5-complete` |
 | 6 Deploy | Passing suite | Builds, guides the Netlify setup, smoke-tests live | Live site | Tag `stage-6-complete` |
 | 7 Security | Live app | Audits, asks the security decisions, builds controls, documents | `docs/security/security-plan.md`, `supabase/rls-policies.sql`, `lib/security/` | Branch, PR, merge; tag `stage-7-complete` |
+| Close-out | Everything above | Writes the session log and playbook | Google Doc in the project Drive folder; copy in `docs/session-logs/` | Commit; tag; push |
 
 After each stage Claude stops and asks the exact `CLAUDE.md` question, for example "Ready to move to Stage 5 — Testing?".
 
@@ -39,6 +40,8 @@ After each stage Claude stops and asks the exact `CLAUDE.md` question, for examp
 11. **ShipStation is estimate-only.** Never book, confirm or buy a label; report the cheapest total as the best choice. A test enforces this.
 12. **Supabase writes need an Accept click** that expires quickly ("Invalid or expired requestState"). Prefer `if not exists` forms over `DROP`, `DELETE` or `UPDATE`; when one is needed, warn the user just before the call.
 13. **Verify before reporting:** read results from git, Supabase and the live site instead of recalling them; say plainly when something was not checked.
+14. **Dashboard work is the user's hands, Claude's instructions.** Claude cannot click in Netlify, Supabase or GitHub. Give numbered click-by-click steps, ask for a screenshot or the exact error text when something fails, and never guess from a paraphrase.
+15. **Keep a risks log when asked.** ContractIQ kept `risks/NNN-short-title.md` files (status, date, severity, what happened, the fix) at the user's request; offer the same at the start of each build.
 
 ## 1.3 Decision sheet: every question asked, with the answer chosen
 
@@ -74,6 +77,12 @@ Fill this in at the start of the next build and most stops disappear. Each row i
 | Production URL? | https://MOTS-ShipIt.AI (custom domain, to attach later). |
 | Hosting? | Netlify: a new project in the same team as ContractIQ, named `gen-ai-apps-mots-shipit-ai`. |
 | Production database for the first deploy? | The same Supabase project as development. |
+| Deploy target: Netlify or Vercel? | Netlify (the course lesson deploys to Netlify; ContractIQ checklist item 6). |
+| Is it safe to put the service-role and OpenAI keys in Netlify? | Yes. Netlify stores them encrypted and gives them only to the server functions, never to the browser. Only `NEXT_PUBLIC_*` values reach the browser. |
+| Tag naming convention? | ShipIt: `stage-<n>-<what-was-done>`. ContractIQ: `Project-<app>-deploy-<repo>-ProductURL-<brand>[-stage7-…]`. Pick one at kickoff. |
+| Stage order when `CLAUDE.md` and the course differ? | The course scaffolds the frontend before writing specs; this build kept the `CLAUDE.md` order. Ask once at kickoff. |
+| Where does the session log go? | A new Google Doc in Drive folder `185RHM9qVwdFtlRkloZ7_ShBB4uuQ52zF`, plus a copy in `docs/session-logs/`, committed and tagged. |
+| Keep a risks log? | ContractIQ: yes (`risks/`). ShipIt: not requested; offer it. |
 
 ### Auth, roles and access
 
@@ -187,6 +196,13 @@ Database patterns that worked:
 11. Smoke test: curl every page and API gate, then run the live API and browser tests with `TEST_APP_URL=<site>`. Skip the IP rate-limit test on Netlify.
 12. Commit, tag `stage-6-complete`, push.
 
+Notes from both builds:
+
+- Netlify's dashboard build fields can show "Not set" even when `netlify.toml` exists; the committed file is what counts.
+- Confirm a protected page with curl without following redirects: it must answer 307 to `/login`, not 200.
+- Netlify Functions stop after about 10 seconds by default. Keep AI and third-party calls short (ShipIt uses 10-15 second timeouts with fallbacks) and track longer jobs as a risk (ContractIQ's 30-second extraction is one).
+- Netlify's "AI explain" panel on a failed deploy can confirm a diagnosis, but check which deploy it is explaining.
+
 | Symptom | Cause | Fix |
 |---|---|---|
 | Netlify "Site not found" | No project at that address | Create it (or check the name) |
@@ -206,7 +222,38 @@ Database patterns that worked:
 5. Test each control, including that each rate limit really answers 429.
 6. Write `docs/security/security-plan.md` and log skill gaps in `CLAUDEchecklist1.md` (the skill assumes a chat-and-upload app).
 7. Branch, PR, merge, tag `stage-7-complete`, push the tag, watch the deploy go live, run the live smoke test.
-8. Hand the user the dashboard-only items: rotate the service-role key, enable leaked-password protection.
+8. Hand the user the dashboard-only items: rotate the service-role key, enable leaked-password protection, check email confirmation, the password-reset flow and refresh-token rotation in Supabase Auth.
+
+What the Supabase advisors flagged in these two builds, and the fix:
+
+| Finding | Fix |
+|---|---|
+| Function with a mutable `search_path` (WARN) | `set search_path = ''` on the function |
+| `SECURITY DEFINER` function callable through `/rest/v1/rpc/...` by `anon` or `authenticated` (WARN) | `revoke execute ... from public, anon, authenticated` |
+| A project-level helper (ContractIQ: `rls_auto_enable()`) exposed through the public API | Revoke the execute grant only; keep what it does |
+| RLS enabled, no policies (INFO) | Intended for service-role-only tables; document it |
+| Leaked-password protection off (WARN) | Dashboard switch (may need a paid plan) |
+| RLS policies call `auth.uid()` per row (performance) | Rewrite as `(select auth.uid())` in a later performance pass |
+| Unindexed foreign keys, unused indexes (INFO) | Later performance pass |
+
+Security design points carried from ContractIQ to ShipIt:
+
+- Rate-limit rows are keyed by an identifier, `ip:<address>` before sign-in and `user:<uuid>` after, never by a `user_id` foreign key: brute-force logins against accounts that don't exist have no user id (ContractIQ risk 001).
+- Middleware sends signed-in users away from `/login` and `/signup` to the dashboard.
+- System prompts say the user's or carrier's text is data, never instructions, and never to reveal the prompt, environment variables or keys.
+- Security limits use the app's own approved values, not the skill's example numbers.
+- When the schema SQL is kept in two places (ContractIQ: `database.sql` and `specs/supabase-schema.sql`), change both and diff them.
+
+### Close-out: session log and playbook
+
+1. Gather facts from the source, not memory: `git log`, `git tag`, `gh pr list`, Supabase `list_migrations`, test counts from the last run.
+2. Read the previous session log (Google Doc) and the sibling project's log, so the new document includes everything in them.
+3. Write the document in this order: status; the playbook (pipeline, rules, decision sheet, runbooks, kickoff prompt); the build record (timeline, features, bugs, deploy, security, migrations, environment variables); reflection; go-live list; references. Include the questions asked with their answers and any changes to `CLAUDE.md` or the checklist.
+4. Save the Markdown copy in `docs/session-logs/`.
+5. Convert to HTML and upload with Google Drive `create_file` (`contentMimeType: text/html`) into the project folder. Do not use `<hr>` (it shows as `-----`), do not nest a list inside a numbered list (numbering restarts), and escape `<` and `>` in text such as `stage-<n>`.
+6. Read the Doc back with Drive `read_file_content` and check headings, tables, numbering and links.
+7. The Drive connector can only create, read, rename, move and trash files; editing a Doc in place needs a Google Docs editing connector, which was not available. A corrected version is therefore a new Doc: rename the old one "SUPERSEDED (see Final Copy) …" and trash it only when the user asks (trash keeps it for 30 days).
+8. Commit the repo copy, add an annotated tag, push both.
 
 ## 1.5 Kickoff prompt for the next build
 
@@ -243,16 +290,27 @@ Paste into a new Claude Code session in the new repo, with the brackets filled i
 | 19:09 | Stage 6 deployed and smoke-tested | d24fbca | stage-6-complete |
 | 19:29 | Stage 7 security (PR #3) | dfbb4c5, merge b628e9f | stage-7-complete |
 | 19:51 | Playbook copy in the repo | 7aa77d9 | stage-7-session-log-playbook-2026-10-08 |
+| 20:13 | Playbook final copy | 035ab99 | stage-7-playbook-final-copy-2026-10-08 |
 
 Pull requests: #1 file-name standardization, #2 Stage 3 scaffold, #3 Stage 7 security. All merged.
 
-## 2.2 Stages 1 to 3
+## 2.2 What the ContractIQ build added to this playbook (sibling project, earlier on 2026-10-08)
+
+- Netlify 404 on every route: no `netlify.toml` and no `@netlify/plugin-nextjs`, so Netlify served the raw `.next` output; the dashboard build fields were a red herring. Fixed by committing the config file (risk 002).
+- Netlify 500 "URL and Key are required": variables saved but no new deploy; later, three of five variables were simply missing. Fix: add all, then trigger a deploy.
+- "Exposed secrets detected": Netlify scans every configured variable's value, including public `NEXT_PUBLIC_*` ones, and matched them in `.env.local.example` and `node_modules` docs. Fix: `SECRETS_SCAN_OMIT_KEYS` with names only.
+- The project was Private until "Make public" was clicked.
+- A stray `.Rhistory` file was swept into a commit; untracked and added to `.gitignore`.
+- Stage 7: the security skill was not a slash command; no `src/` folder existed, so files went to `contractiq/lib/security/`; the rate-limit table was redesigned from `user_id` to an identifier before shipping; advisors found mutable search paths and an RPC-exposed `SECURITY DEFINER` function; both prompts were hardened; the work went through PR #1 with a regular merge, migration `stage7_security_foundation`, a fresh advisor run and a post-merge smoke test.
+- Open items it left: an old PDF library that fails on some modern PDFs, the Netlify 10-second function limit versus a 30-second extraction, and Supabase Auth dashboard settings to verify.
+
+## 2.3 Stages 1 to 3
 
 - Product: MOTS ShipIt, an agentic freight sourcing and booking platform, defined by `docs/MOTS ShipIt.docx_PRD_OLD.pdf` (current despite the name).
 - Stage 1 (earlier session) chose Supabase Auth and database, Netlify hosting, a generic TMS adapter, and deferred voice. Stage 2 produced nine spec files, `supabase-schema.sql` and the env example.
 - Stage 3 mirrored ContractIQ: the app in `mots-shipit-ai/`; specs moved to `mots-shipit-ai/specs/`; `.env.example` became `mots-shipit-ai/.env.local.example`; `Routing_Guide.json` moved to `mots-shipit-ai/data/`; a root `netlify.toml`. Next.js 14.2.35 App Router, TypeScript, Tailwind on design tokens, Supabase SSR helpers, TanStack Query, Zod, placeholder pages and auth middleware. Delivered through PR #2.
 
-## 2.3 Stage 4 system design
+## 2.4 Stage 4 system design
 
 - Supabase project `mots-shipit-ai` created in us-east-2 under the user's free-plan organization after confirming name, region and cost.
 - Data model: six domain schemas; renames and placements as in the decision sheet; the "ShipIt Data Domains" artifact was the review surface across several rounds.
@@ -260,7 +318,7 @@ Pull requests: #1 file-name standardization, #2 Stage 3 scaffold, #3 Stage 7 sec
 - `load_transit_freight_amount`: one row per enquiry with the cheapest ShipStation rate, all rates and a copy of the routing-guide entry; newest 200 kept; tested with 205 rows.
 - `load_estimate_cache`: latest answer per geography, zip or state and question type, valid 24 hours. `load_estimate_enquiries`: every question, newest 200; users read only their own.
 
-## 2.4 Stage 4 features
+## 2.5 Stage 4 features
 
 **Feature 1: login, sign-up, password reset.** Supabase email and password with confirmation, forgot and reset pages, sign-out, a header with name and role. Roles as in the decision sheet. Sign-up limited by an allow-list trigger (company domains, empty until provided, plus jyotis.sqa@gmail.com). Test members skip confirmation (the server creates them confirmed). Auth rate limit 10 a minute per IP, keyed `ip:` or `user:` (ContractIQ risk 001). Verified: the user signed up, confirmed by email and reached the dashboard; blocked domains create no user; the 11th wrong login returns 429.
 
@@ -280,21 +338,21 @@ Pull requests: #1 file-name standardization, #2 Stage 3 scaffold, #3 Stage 7 sec
 
 **Feature 9: audit log.** `operational_excellence_governance.audit_events`, written by triggers in the same transaction for loads, offers, compliance checks, bookings, exceptions and control actions, plus events for bookings blocked by stale compliance and for which AI model read a reply. Nobody can change or delete an event. Audit trail on each load page and across all loads on Reports.
 
-## 2.5 Configuration done in dashboards
+## 2.6 Configuration done in dashboards
 
 - Supabase Data API exposed schemas: `data_foundation`, `transportation_shipment`, `operational_excellence_governance`, `master_data_management`.
 - `mots-shipit-ai/.env.local` (git-ignored): Supabase URL, anon and service keys, OpenAI key and model, ShipStation sandbox key and origin zip 38103, a generated TMS webhook secret, outreach in test mode with the test email.
 - Netlify project `gen-ai-apps-mots-shipit-ai`: public, variables imported, redeployed.
 - Supabase redirect URL for the live site (the user was asked to add it).
 
-## 2.6 Stage 5 testing
+## 2.7 Stage 5 testing
 
 - 164 tests at the end of Stage 5 (79 unit, 76 live API, 9 browser); 195 after Stage 7 (103 unit, 83 live API, 9 browser).
 - Bug found, from Feature 9: the audit trigger used `events || 'status_changed'`, so every load status or version change failed with "malformed array literal". Outreach, booking and new load versions had been broken since Feature 9. Fixed with `array_append` (migration `fix_audit_row_change_array_append`).
 - Bug found: intake saved the load as "sourcing" before saving the Policy engine result; if that second write failed, an unchecked load could be ranked and contacted. Ranking and outreach now refuse unchecked loads (409); a TMS retry re-checks them.
 - At the user's reminder, a test now fails if any ShipStation booking endpoint appears in the app.
 
-## 2.7 Stage 6 deploy (what happened)
+## 2.8 Stage 6 deploy (what happened)
 
 1. Production build passed; `netlify.toml` extended with the scan exclusions before the first deploy.
 2. The user linked ContractIQ's Netlify project; a clarification established that ShipIt needs its own project in the same team. Name chosen: `gen-ai-apps-mots-shipit-ai`.
@@ -304,18 +362,18 @@ Pull requests: #1 file-name standardization, #2 Stage 3 scaffold, #3 Stage 7 sec
 6. Webhook 503: `TMS_WEBHOOK_SECRET` took effect only after one more deploy; the `age` header showed when a deploy had not published.
 7. Smoke test passed: pages, auth gates, 73 live API tests, 9 browser tests.
 
-## 2.8 Stage 7 security (what happened)
+## 2.9 Stage 7 security (what happened)
 
 - Audit baseline: 21 tables with RLS, no anonymous access, signed-in users read-only; 9 functions pinned and not callable by users; no key in the 11 live JavaScript files.
 - Built: prompt-injection guard; rate limits (estimate 30 a minute, booking 5 an hour, carrier reply 30 a minute per user; reset-password 10 a minute per IP); 422 everywhere through shared schemas; anti-framing, referrer and permissions headers; token limits; `rls-policies.sql` applied as migration `stage7_security_baseline`; security plan; checklist items 13 to 19.
 - Caught before shipping: the database rejected the new `carrier_reply` rate-limit action; because the limiter fails open, replies would have had no limit. Fixed in the same migration; a test proves 429.
 - After merge the new build went live in about 105 seconds; 80 live API and 9 browser tests passed.
 
-## 2.9 Supabase migrations (18)
+## 2.10 Supabase migrations (18)
 
 create_transportation_shipment_routing_guide · seed_transportation_shipment_routing_guide · add_geography_to_routing_guide · create_load_transit_freight_amount · create_load_estimate_cache_and_enquiries · create_user_profiles_and_signup_access · create_rate_limit_events · create_loads_customers_policies_exceptions · create_carriers_seeded_from_routing_guide · seed_test_customer · add_test_member_flag_to_allowed_signup_emails · create_carrier_interactions · create_carrier_offers_and_compliance_checks · create_carrier_bookings · create_control_actions · create_audit_events · fix_audit_row_change_array_append · stage7_security_baseline
 
-## 2.10 Environment variables
+## 2.11 Environment variables
 
 | Variable | Kind | Value or note |
 |---|---|---|
@@ -330,6 +388,13 @@ create_transportation_shipment_routing_guide · seed_transportation_shipment_rou
 | FMCSA_WEB_KEY, COMPLIANCE_FRESHNESS_HOURS, OFFER_MIN_CONFIDENCE | Secret, settings | Optional; 24; 0.8 |
 | ESTIMATE_DEFAULT_WEIGHT_POUNDS | Setting | 10 |
 | MAX_CHAT_HISTORY | Unused | No conversation history is sent to the model |
+
+## 2.12 Close-out (what happened)
+
+- The first playbook Doc was uploaded from HTML; a horizontal-line tag and a list nested inside a numbered list rendered badly, and the Docs editing connector was not available to fix it in place.
+- The user asked for a final copy with very detailed steps, every question answered and a reflection; it was uploaded as a new Doc, the draft was renamed superseded and then trashed at the user's request.
+- The user then asked to verify the final copy against this session and the ContractIQ log; ten missing items were added (close-out runbook, risks log, Netlify function time limit, advisor findings table, course lab mapping and stage-order note, dashboard working mode, secrets-in-Netlify answer, tag naming, middleware and prompt details, Drive upload rules).
+- A side note the user sent with /btw could not be seen from this session; /btw messages are not shared with the main conversation, so paste such notes into the chat.
 
 # Part 3. Reflection
 
@@ -347,7 +412,7 @@ create_transportation_shipment_routing_guide · seed_transportation_shipment_rou
 
 **Lessons learned.** Test every write path after adding a database trigger. Add the database CHECK value in the same change as the code that sends it. Prove that fail-open code actually limits. Make two-step writes fail closed. In Netlify, create the project, add variables, then deploy, and confirm a new deploy published before re-testing. Never deploy into a sibling project's site.
 
-**New enhancements.** For the process: a GitHub Actions workflow that runs the unit tests on every PR; a Netlify deploy token so Claude can create the project, set variables and deploy without dashboard steps; a separate staging Supabase project for tests; scripts that seed and remove all test data; the decision sheet saved as a template file in the repo; the Google Docs connector so logs update in place. For the product: admin screens for customers, policies and carriers; inbound reply webhooks; a real TMS connection; touchless-booking and compliance reports; the warehouse and order-management domains.
+**New enhancements.** For the process: a GitHub Actions workflow that runs the unit tests on every PR; a Netlify deploy token so Claude can create the project, set variables and deploy without dashboard steps; a separate staging Supabase project for tests; scripts that seed and remove all test data; the decision sheet saved as a template file in the repo; a `risks/` log from day one; the Google Docs connector so logs update in place. For the product: admin screens for customers, policies and carriers; inbound reply webhooks; a real TMS connection; touchless-booking and compliance reports; the warehouse and order-management domains.
 
 # Part 4. Go-live list and references
 
@@ -373,5 +438,5 @@ create_transportation_shipment_routing_guide · seed_transportation_shipment_rou
 - Data model artifact: https://claude.ai/artifact/ESXXRkukHeGbUgkBDeA887
 - ShipStation: https://docs.shipstation.com/rate-shopping and https://docs.shipstation.com/apis/shipengine/docs/rates/rates
 - Sibling project: `Gen-AI-Apps_MOTS_contract_scout_ai`, its session log and checklist.
-- Course: https://github.com/initmahesh/MLAI-community-labs/tree/main/Cohort-Labs/cohort-10/week-5/5.1-ai-app-development-with-claude-and-azure
+- Course: https://github.com/initmahesh/MLAI-community-labs/tree/main/Cohort-Labs/cohort-10/week-5/5.1-ai-app-development-with-claude-and-azure (labs: `01-Planning-and-Architecture-Lab` for Stages 1 and 2, `02-Building-the-Application-Lab` for Stages 3 and 4, `03-Security-and-Deployment-Lab` for Stages 6 and 7, `04-integration-of-your-app-with-azureagent` not used).
 - Starter repo: https://github.com/sachin0034-tech/dev-os
