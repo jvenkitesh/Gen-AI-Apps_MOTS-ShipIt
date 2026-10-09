@@ -39,6 +39,8 @@ Every other module in this spec set (`booking.ts`, `negotiation.ts`, `compliance
 - The actor comes from the row (actor_id, decided_by, booked_by, resolved_by, checked_by, created_by), else `auth.uid()`, else "System". `policy_version` comes from the row's `evaluated_policy_version` (load events).
 - UI: an audit trail at the bottom of each load page, and the audit log across every load on `/reports` (latest 150, with a link to each load). Actor names are read with the service role because profiles are readable only by their owner.
 - Verified live (in a transaction that rolled back): a control-action pause wrote one `control_action.pause` event, and both an update and a delete of it failed with `AUDIT_IMMUTABLE`.
+- Fix from Stage 5 testing (migration `fix_audit_row_change_array_append`): `events || 'status_changed'` made Postgres read the literal as an array, so every load status or version change, and every exception escalation, failed with "malformed array literal". The trigger now uses `array_append`. Covered by the test suite (`test/negotiation`, `test/loads`, `test/exceptions`, `test/audit`).
+- For the service role, an update or delete is refused by the missing grant ("permission denied") before the guard trigger runs; either refusal leaves the event untouched.
 
 ## Edge cases
 

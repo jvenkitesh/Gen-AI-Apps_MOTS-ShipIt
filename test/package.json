@@ -1,0 +1,27 @@
+{
+  "name": "mots-shipit-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:auth": "vitest run --project integration auth/",
+    "test:loads": "vitest run --project integration loads/",
+    "test:negotiation": "vitest run --project integration negotiation/",
+    "test:control": "vitest run --project integration control/",
+    "test:exceptions": "vitest run --project integration exceptions/",
+    "test:estimate": "vitest run --project integration estimate/",
+    "test:audit": "vitest run --project integration audit/",
+    "test:watch": "vitest --project unit",
+    "test:e2e": "playwright test",
+    "test:all": "vitest run && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@supabase/ssr": "0.5.2",
+    "@supabase/supabase-js": "2.117.3",
+    "dotenv": "16.6.1",
+    "vitest": "5.0.3"
+  }
+}

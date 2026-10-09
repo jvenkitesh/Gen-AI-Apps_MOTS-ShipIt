@@ -1,5 +1,6 @@
 -- MOTS ShipIt -- Feature 9: audit log (C9)
--- Applied to Supabase as migration create_audit_events.
+-- Applied to Supabase as migration create_audit_events; audit_row_change() fixed by
+-- migration fix_audit_row_change_array_append (Stage 5 testing found every load update failing).
 -- Every state change on loads, offers, compliance checks, bookings, exceptions and control
 -- actions writes one audit row from a trigger, so it commits in the SAME transaction as the
 -- change. audit_events is append-only: a guard trigger rejects every update and delete,
@@ -84,8 +85,9 @@ begin
     entity := 'load'; the_load := (n ->> 'id')::uuid;
     if tg_op = 'INSERT' then events := array['created'];
     else
-      if (n ->> 'version') is distinct from (o ->> 'version') then events := events || 'version_incremented'; end if;
-      if (n ->> 'status') is distinct from (o ->> 'status') then events := events || 'status_changed'; end if;
+      -- array_append, not ||: an untyped literal after || is read as an array ("malformed array literal").
+      if (n ->> 'version') is distinct from (o ->> 'version') then events := array_append(events, 'version_incremented'); end if;
+      if (n ->> 'status') is distinct from (o ->> 'status') then events := array_append(events, 'status_changed'); end if;
     end if;
   elsif tg_table_name = 'carrier_offers' then
     entity := 'offer'; the_load := (n ->> 'load_id')::uuid;
@@ -103,8 +105,8 @@ begin
     entity := 'exception'; the_load := (n ->> 'load_id')::uuid;
     if tg_op = 'INSERT' then events := array['raised'];
     else
-      if (n ->> 'status') is distinct from (o ->> 'status') then events := events || (n ->> 'status'); end if;
-      if (n ->> 'risk_level') is distinct from (o ->> 'risk_level') and n ->> 'risk_level' = 'critical' then events := events || 'escalated'; end if;
+      if (n ->> 'status') is distinct from (o ->> 'status') then events := array_append(events, n ->> 'status'); end if;
+      if (n ->> 'risk_level') is distinct from (o ->> 'risk_level') and n ->> 'risk_level' = 'critical' then events := array_append(events, 'escalated'); end if;
     end if;
   elsif tg_table_name = 'control_actions' then
     entity := 'control_action';

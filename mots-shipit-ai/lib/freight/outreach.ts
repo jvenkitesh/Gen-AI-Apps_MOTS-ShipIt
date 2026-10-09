@@ -120,6 +120,9 @@ export async function contactBatch(params: {
   if (BLOCKED_STATUSES.has(load.status)) {
     throw new OutreachBlockedError(`No outreach on a load that is ${load.status}.`, "LOAD_NOT_OPEN");
   }
+  if (!load.evaluated_at) {
+    throw new OutreachBlockedError("The Policy engine hasn't checked this load version yet, so no carrier can be contacted.", "NOT_EVALUATED");
+  }
 
   try {
     await assertNotPaused(admin, {

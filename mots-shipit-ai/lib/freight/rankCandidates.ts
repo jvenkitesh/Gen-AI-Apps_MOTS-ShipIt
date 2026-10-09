@@ -15,6 +15,11 @@ export async function rankCandidates(supabase: SupabaseClient, loadId: string): 
   if (!RANKABLE_STATUSES.has(load.status)) {
     throw new LoadNotRankableError(`Load is ${load.status}; only loads that passed the policy engine are ranked.`);
   }
+  // A load (or new version) starts as sourcing before the Policy engine result is saved. If that
+  // save failed, the load was never checked: fail closed until the TMS retries the webhook.
+  if (!load.evaluated_at) {
+    throw new LoadNotRankableError("The Policy engine hasn't checked this load version yet; it can't be ranked.");
+  }
 
   const inputs = await loadRankingInputs(supabase, load);
   const result = rankCarriers({ load, ...inputs });

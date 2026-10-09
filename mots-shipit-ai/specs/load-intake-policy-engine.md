@@ -72,6 +72,10 @@ Auth: any signed-in role (assignment model is out of MVP scope). Query params: `
 - `app/(app)/loads/[id]/page.tsx` — load fields, Policy engine eligibility (reason codes in plain language), the sourcing policy version it was checked against, the load's exceptions, and a placeholder for carrier candidates/offers.
 - Loading states use the shared "Transmogrifying…" indicator.
 
+## Fail closed when the policy check wasn't saved (Stage 5 finding, 2026-10-08)
+
+`ingest_load()` stores the load (or a new version) as `sourcing` with `evaluated_at` null; the Policy engine result is saved in a second write. If that second write fails, the webhook answers 500 but the load stays stored, unchecked. Carrier ranking (`409 LOAD_NOT_ELIGIBLE`) and outreach (`409 NOT_EVALUATED`) therefore refuse any load whose `evaluated_at` is null. The TMS retrying the same webhook re-runs the Policy engine (`outcome: unchanged`) and unblocks the load. Covered by `test/loads/loads-unevaluated-fail-closed.test.ts`.
+
 ## Edge cases
 
 - Payload missing a field → `400`, nothing written (validation happens before any insert).
