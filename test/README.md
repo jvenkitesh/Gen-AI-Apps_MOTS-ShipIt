@@ -6,7 +6,7 @@ Three layers, in the same structure as ContractIQ's `test/` folder:
   (`@/lib/...`). No server, no network: a guard in `unit/setup.ts` lets fetch reach only
   `localhost`, so OpenAI, ShipStation and Supabase are stubbed. Runs in under a second.
 - **API integration tests** (Vitest, `*.test.ts` in `auth/`, `loads/`, `negotiation/`,
-  `control/`, `exceptions/`, `estimate/`, `audit/`) — live calls to the running app's routes
+  `control/`, `exceptions/`, `estimate/`, `audit/`, `security/`) — live calls to the running app's routes
   and the dev Supabase project (`gunsbekosmitvudjpmgg`).
 - **Browser E2E tests** (Playwright, `e2e/*.spec.ts`) — the real rendered UI: login form,
   redirects, the estimate chatbot, outreach from a load page.
@@ -42,7 +42,7 @@ npm run test:e2e          # browser tests
 npm run test:all          # everything: unit + integration, then browser
 npm test                  # unit + integration
 
-npm run test:negotiation  # one folder (also: auth, loads, control, exceptions, estimate, audit)
+npm run test:negotiation  # one folder (also: auth, loads, control, exceptions, estimate, audit, security)
 npx playwright test e2e/load-outreach-from-load-page.spec.ts   # one browser test
 npx playwright show-trace test-results/.../trace.zip           # debug a browser failure
 ```
@@ -51,7 +51,7 @@ npx playwright show-trace test-results/.../trace.zip           # debug a browser
 
 ```bash
 export TEST_APP_URL=https://gen-ai-apps-mots-shipit-ai.netlify.app
-npx vitest run --project integration auth/auth-login auth/auth-roles estimate/ loads/ negotiation/ control/ exceptions/ audit/
+npx vitest run --project integration auth/auth-login auth/auth-roles estimate/ loads/ negotiation/ control/ exceptions/ audit/ security/
 npx playwright test
 ```
 
@@ -95,6 +95,7 @@ with TEST-LOAD-0001/0002 and the demo customer before go-live. Audit rows stay.
 | `outreach-message` | Disclosure first, UTC times, target rate and ceiling never sent; test mode by default |
 | `input-validation` | Auth schemas and the TMS load payload, with their messages |
 | `audit-describe` | Plain-language audit lines |
+| `prompt-injection-guard` | 15 attack patterns caught (incl. hidden characters); normal freight questions and carrier replies allowed |
 | `security-helpers` | Client IP precedence (Netlify header first), 429 shape, error responses never leak details |
 
 ### API integration (live)
@@ -111,6 +112,7 @@ with TEST-LOAD-0001/0002 and the demo customer before go-live. Audit rows stay.
 | `control/control-pause-blocks-outreach` | Validation; a load pause blocks outreach (409 PAUSED); resume restores it | **P0** |
 | `exceptions/exceptions-queue` | 4-hour SLA, soonest first, breached kept, escalate, resolve once | **P0** |
 | `estimate/estimate-chatbot` | Validation; live answer picks the cheaper of routing guide and ShipStation | **P0** |
+| `security/security-controls` | Stage 7: anti-framing headers; injected estimate refused before any AI call; injected carrier reply held for a person (no offer, high-risk exception); estimate, booking and carrier-reply rate limits answer 429 | **P0** |
 | `audit/audit-log-immutable` | No update or delete, even for the service role; events outlive their load; users read but can't write; Reports page shows the log | **P0** |
 
 ### `e2e/` (Playwright)

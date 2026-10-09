@@ -1,23 +1,11 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuth } from "@/lib/security/authGuard";
-import { activePauses, applyControlAction, CONTROL_SCOPES } from "@/lib/freight/controlPlane";
+import { controlActionSchema, parseBody } from "@/lib/security/inputValidator";
+import { activePauses, applyControlAction } from "@/lib/freight/controlPlane";
 
 // The PRD names the Supply Chain (Strategic) Operations Manager as the control-plane role.
 const CONTROL_ROLES = ["administrator", "supply_chain_operations_manager"] as const;
-
-const bodySchema = z
-  .object({
-    scope: z.enum(CONTROL_SCOPES),
-    scopeId: z.string().trim().min(1).max(100).nullable().optional(),
-    action: z.enum(["pause", "resume", "override", "cancel"]),
-    reason: z.string().trim().min(3, "Give a reason (at least 3 characters).").max(1000),
-  })
-  .refine((b) => (b.scope === "global") === !b.scopeId, {
-    message: "Global needs no target; every other scope needs one.",
-    path: ["scopeId"],
-  });
 
 export async function GET() {
   const auth = await requireAuth();
@@ -35,17 +23,15 @@ export async function POST(request: Request) {
   const auth = await requireAuth([...CONTROL_ROLES]);
   if (auth instanceof NextResponse) return auth;
 
-  const parsed = bodySchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return NextResponse.json({ error: "VALIDATION_ERROR", message: parsed.error.issues[0]?.message ?? "Invalid control action." }, { status: 400 });
-  }
+  const body = await parseBody(request, controlActionSchema);
+  if (!body.ok) return body.response;
   try {
     const controlAction = await applyControlAction(createAdminClient(), {
       actorId: auth.userId,
-      scope: parsed.data.scope,
-      scopeId: parsed.data.scope === "global" ? null : parsed.data.scopeId ?? null,
-      action: parsed.data.action,
-      reason: parsed.data.reason,
+      scope: body.data.scope,
+      scopeId: body.data.scope === "global" ? null : body.data.scopeId ?? null,
+      action: body.data.action,
+      reason: body.data.reason,
     });
     return NextResponse.json({ controlAction }, { status: 201 });
   } catch (err) {

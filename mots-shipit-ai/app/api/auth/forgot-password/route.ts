@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { firstIssueMessage, forgotPasswordSchema } from "@/lib/security/inputValidator";
+import { parseBody, forgotPasswordSchema } from "@/lib/security/inputValidator";
 import { appOrigin } from "@/lib/utils/redirects";
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/security/rateLimiter";
 
@@ -10,13 +10,8 @@ export async function POST(request: Request) {
   const rateLimit = await checkRateLimit(`ip:${getClientIp(request)}`, "auth");
   if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
 
-  const parsed = forgotPasswordSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "VALIDATION_ERROR", message: firstIssueMessage(parsed.error) },
-      { status: 422 }
-    );
-  }
+  const parsed = await parseBody(request, forgotPasswordSchema);
+  if (!parsed.ok) return parsed.response;
 
   const supabase = createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {

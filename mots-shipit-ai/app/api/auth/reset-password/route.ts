@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { firstIssueMessage, resetPasswordSchema } from "@/lib/security/inputValidator";
+import { parseBody, resetPasswordSchema } from "@/lib/security/inputValidator";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/security/rateLimiter";
 
 export async function POST(request: Request) {
-  const parsed = resetPasswordSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "VALIDATION_ERROR", message: firstIssueMessage(parsed.error) },
-      { status: 422 }
-    );
-  }
+  const rateLimit = await checkRateLimit(`ip:${getClientIp(request)}`, "auth");
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
+
+  const body = await parseBody(request, resetPasswordSchema);
+  if (!body.ok) return body.response;
 
   const supabase = createClient();
   const {
@@ -22,7 +21,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  const { error } = await supabase.auth.updateUser({ password: body.data.password });
   if (error) {
     if (error.code === "same_password") {
       return NextResponse.json(

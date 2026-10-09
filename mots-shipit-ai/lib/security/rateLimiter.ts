@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type RateLimitAction = "auth" | "estimate" | "booking" | "webhook";
+export type RateLimitAction = "auth" | "estimate" | "booking" | "carrier_reply" | "webhook";
 
 // Sliding-window limits from specs/auth-rbac.md. webhook has no limit until a real TMS is chosen.
+// carrier_reply (Stage 7): each pasted reply is an OpenAI call, so it is capped like estimates.
 const LIMITS: Record<Exclude<RateLimitAction, "webhook">, { maxRequests: number; windowSeconds: number }> = {
   auth: { maxRequests: 10, windowSeconds: 60 },
   estimate: { maxRequests: 30, windowSeconds: 60 },
   booking: { maxRequests: 5, windowSeconds: 3600 },
+  carrier_reply: { maxRequests: 30, windowSeconds: 60 },
 };
 
 export type RateLimitResult = { allowed: boolean; retryAfterSeconds?: number };

@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { api } from "../helpers/api";
 import { createE2ELoad, deleteE2ELoads } from "../helpers/fixtures";
 import { createAdminClient } from "../helpers/supabaseAdmin";
-import { cookieHeader, roleUser } from "../helpers/testUser";
+import { cookieHeader, createEphemeralUser, deleteEphemeralUser, roleUser, type TestUser } from "../helpers/testUser";
 
 type Candidate = { carrierId: string; name: string; score: number };
 type Offer = { id: string; status: string; rate_dollars: number; carrier_id: string };
@@ -21,6 +21,9 @@ describe("negotiation-booking-golden-path", () => {
   let manager: string;
   let analyst: string;
   let viewer: string;
+  // Booking is limited to 5 an hour per user, so each run books as its own throwaway planner.
+  let bookerUser: TestUser;
+  let booker: string;
   let candidates: Candidate[];
   let goodOffer: Offer;
   let complianceCheckIds: string[] = [];
@@ -35,6 +38,8 @@ describe("negotiation-booking-golden-path", () => {
       roleUser("viewer").then(cookieHeader),
     ]);
     // Memphis to Los Angeles: California has two carriers in the routing guide (BNSF, FedEx).
+    bookerUser = await createEphemeralUser("booker", "transportation_planner");
+    booker = await cookieHeader(bookerUser);
     const load = await createE2ELoad({ destination_zipcode: "90012" });
     loadId = load.id;
     externalId = load.payload.external_id;
@@ -47,6 +52,7 @@ describe("negotiation-booking-golden-path", () => {
     }
     // A booked load can't be deleted; it stays, labelled E2E-. Otherwise it's removed.
     if (loadId) await deleteE2ELoads([loadId]);
+    if (bookerUser) await deleteEphemeralUser(bookerUser.id);
   });
 
   it("ranks carriers for the load from the routing guide", async () => {
@@ -158,7 +164,7 @@ describe("negotiation-booking-golden-path", () => {
   it("books the accepted offer once; the booking stands even if the TMS write-back fails", async () => {
     const res = await api<{ booking: Booking; outcome: string }>(`/api/loads/${loadId}/book`, {
       body: { offerId: goodOffer.id, idempotencyKey: bookingKey },
-      cookie: planner,
+      cookie: booker,
     });
     expect(res.status).toBe(201);
     expect(res.body.outcome).toBe("created");
@@ -174,14 +180,14 @@ describe("negotiation-booking-golden-path", () => {
   it("returns the same booking for a retry with the same key (200)", async () => {
     const res = await api<{ booking: Booking; outcome: string }>(`/api/loads/${loadId}/book`, {
       body: { offerId: goodOffer.id, idempotencyKey: bookingKey },
-      cookie: planner,
+      cookie: booker,
     });
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ outcome: "existing", booking: { id: booking.id } });
   });
 
   it("never books the same load twice", async () => {
-    const res = await api(`/api/loads/${loadId}/book`, { body: { offerId: goodOffer.id, idempotencyKey: `e2e-${randomUUID()}` }, cookie: planner });
+    const res = await api(`/api/loads/${loadId}/book`, { body: { offerId: goodOffer.id, idempotencyKey: `e2e-${randomUUID()}` }, cookie: booker });
     expect(res.status).toBe(409);
     expect(res.body).toMatchObject({ error: "BOOKING_ALREADY_BOOKED" });
     const { data } = await admin.schema("transportation_shipment").from("carrier_bookings").select("id").eq("load_id", loadId);
@@ -210,6 +216,6 @@ describe("negotiation-booking-golden-path", () => {
     expect(extracted).toHaveLength(2);
     for (const e of extracted) expect(e.model_version).toBe(process.env.OPENAI_MODEL || "gpt-4o-mini");
     const committed = (data ?? []).find((e) => e.event_type === "committed");
-    expect(committed?.actor_id).toBe((await roleUser("transportation_planner")).id);
+    expect(committed?.actor_id).toBe(bookerUser.id);
   });
 });

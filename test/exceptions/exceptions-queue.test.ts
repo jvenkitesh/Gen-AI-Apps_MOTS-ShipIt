@@ -75,7 +75,7 @@ describe("exceptions-queue", () => {
 
   it("requires a real note to resolve", async () => {
     const res = await api(`/api/exceptions/${exception.id}/resolve`, { body: { action: "resolve", resolution: "ok" }, cookie: planner });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
   });
 
   it("escalates: stays open, becomes critical, keeps the note", async () => {

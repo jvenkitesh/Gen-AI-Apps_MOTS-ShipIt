@@ -37,9 +37,9 @@ describe("control-pause-blocks-outreach", () => {
     ["a load with no target", { scope: "load", action: "pause", reason: "E2E validation" }],
     ["a reason that is too short", { scope: "global", action: "pause", reason: "no" }],
     ["an unknown action", { scope: "global", action: "delete", reason: "E2E validation" }],
-  ])("rejects %s with 400", async (_name, body) => {
+  ])("rejects %s with 422", async (_name, body) => {
     const res = await api("/api/control", { body, cookie: manager });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.body).toMatchObject({ error: "VALIDATION_ERROR" });
   });
 
