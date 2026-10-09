@@ -4,11 +4,13 @@
   publish = ".next"
 
 [build.environment]
-  # These NEXT_PUBLIC_* vars are meant to be public (baked into the client
-  # bundle by design) and trip false-positive matches in node_modules docs.
-  # Real secrets (SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, SHIPSTATION_API_KEY,
-  # TMS_WEBHOOK_SECRET) are NOT listed here, so Netlify's secrets scanner still checks for those.
-  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_APP_URL,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
+  # Netlify's secrets scanner fails the build when any configured variable's value appears in
+  # the repo. These are not secrets: NEXT_PUBLIC_* values are baked into the browser bundle by
+  # design, and the rest are plain settings whose values ("test", "10", "gpt-4o-mini", a zip
+  # code) naturally appear in code and docs. Only names are listed here, never values.
+  # Real secrets stay scanned: SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY, SHIPSTATION_API_KEY,
+  # TMS_WEBHOOK_SECRET, RESEND_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, FMCSA_WEB_KEY.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_APP_URL,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,OPENAI_MODEL,SHIPSTATION_FROM_POSTAL_CODE,OUTREACH_MODE,OUTREACH_TEST_EMAIL,OUTREACH_FROM_EMAIL,OUTREACH_MAX_MESSAGES_PER_CONTACT_PER_DAY,OUTREACH_BATCH_WAIT_MINUTES,OFFER_MIN_CONFIDENCE,COMPLIANCE_FRESHNESS_HOURS,ESTIMATE_DEFAULT_WEIGHT_POUNDS,MAX_CHAT_HISTORY"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
