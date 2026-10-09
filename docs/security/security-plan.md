@@ -1,6 +1,6 @@
 # MOTS ShipIt — Security Plan (Stage 7)
 
-**Date:** 2026-10-08 (PST) · **Branch:** `stage-7-security-foundation` · **Live site:** https://mots-shipit.ai (custom domain, pending registration; until then https://gen-ai-apps-mots-shipit-ai.netlify.app) · **Supabase project:** `gunsbekosmitvudjpmgg`
+**Date:** 2026-10-08 (PST) · **Branch:** `stage-7-security-foundation` · **Live site:** https://gen-ai-apps-mots-shipit-ai.netlify.app (no custom domain: mots-shipit.ai was not registered and the user chose not to buy it) · **Supabase project:** `gunsbekosmitvudjpmgg`
 
 Method: `skills/security-foundation/SKILL.md`, read and followed by hand (it isn't available as a slash command here), in the same order as the ContractIQ Stage 7 session log: read the docs and specs → audit every route, the middleware and the database → run Supabase's advisors against the live project → build the missing controls → test → document.
 
@@ -62,8 +62,8 @@ No new variables. Actions for the user:
 
 1. **Rotate the service-role key** (Supabase → Project Settings → API Keys → roll the `service_role` / secret key). Then put the new value in `mots-shipit-ai/.env.local` and in Netlify (`SUPABASE_SERVICE_ROLE_KEY`), and redeploy. Never paste it into a chat.
 2. **Enable leaked-password protection** (Supabase → Authentication → Policies/Passwords): the only WARN left on the security advisor.
-3. **Check Auth settings:** email confirmation on; redirect URLs `https://mots-shipit.ai/**` and `https://gen-ai-apps-mots-shipit-ai.netlify.app/**` allowed, Site URL `https://mots-shipit.ai`; refresh-token rotation on (default).
-4. **Netlify:** `NEXT_PUBLIC_APP_URL` must be `https://mots-shipit.ai` once the domain is attached (never `localhost`).
+3. **Check Auth settings:** email confirmation on; redirect URL `https://gen-ai-apps-mots-shipit-ai.netlify.app/**` allowed, Site URL `https://gen-ai-apps-mots-shipit-ai.netlify.app`; refresh-token rotation on (default).
+4. **Netlify:** `NEXT_PUBLIC_APP_URL` must be `https://gen-ai-apps-mots-shipit-ai.netlify.app` (never `localhost`).
 
 ## 7. Verification
 
@@ -78,4 +78,4 @@ No new variables. Actions for the user:
 - On Netlify, all users behind one office IP share the 10/min auth bucket.
 - Performance advisor (INFO only): 22 unindexed foreign keys, 9 unused indexes — a later performance pass.
 - Signed-in users can read carrier contacts (email/phone): fine for one organization; revisit if outside users get accounts.
-- Go-live: register and attach https://mots-shipit.ai; remove E2E/TEST data and test users; switch `OUTREACH_MODE` only after the provider and legal decisions; inbound reply webhooks will need their own signature checks.
+- Go-live: remove E2E/TEST data and test users; switch `OUTREACH_MODE` only after the provider and legal decisions; inbound reply webhooks will need their own signature checks.

@@ -4,7 +4,7 @@
 
 **What this document is for:** it is the guide for building the next app of this kind with Claude, end to end, without re-inventing the steps. Part 1 is the playbook: the pipeline, the rules, every question with its answer, and step-by-step runbooks for each stage and for the close-out. It covers this build and the ContractIQ build before it (session log of 2026-10-08), so both can be replayed from here. Part 2 is the full record of this build. Part 3 is the reflection. Part 4 is the go-live list and the references.
 
-**Project facts:** repo github.com/jvenkitesh/Gen-AI-Apps_MOTS-ShipIt · app folder `mots-shipit-ai/` · tests `test/` · Supabase project `mots-shipit-ai` (ref `gunsbekosmitvudjpmgg`, us-east-2, free plan) · Netlify project `gen-ai-apps-mots-shipit-ai` · sibling project ContractIQ (`Gen-AI-Apps_MOTS_contract_scout_ai`), whose session log set the step order.
+**Project facts:** repo github.com/jvenkitesh/gen-ai-apps-mots-shipit-ai (renamed from Gen-AI-Apps_MOTS-ShipIt) · laptop folder `gen-ai-apps-mots-shipit-ai/` · app folder `mots-shipit-ai/` · tests `test/` · Supabase project `mots-shipit-ai` (ref `gunsbekosmitvudjpmgg`, us-east-2, free plan) · Netlify project `gen-ai-apps-mots-shipit-ai` · sibling project ContractIQ (`Gen-AI-Apps_MOTS_contract_scout_ai`), whose session log set the step order.
 
 *Sources: commit hashes, tags, PR numbers and migration names were read from git, GitHub and Supabase while writing. This final copy combines the first session log (Stages 1 to 4, Features 1 to 4) with everything after it and replaces both earlier documents.*
 
@@ -74,7 +74,8 @@ Fill this in at the start of the next build and most stops disappear. Each row i
 | Create the Supabase project? Name, region, cost? | Yes, after confirming: `mots-shipit-ai`, us-east-2, free plan. The user asked to be asked at every step and named the schemas and tables. |
 | Language model? | OpenAI `gpt-4o-mini`, reusing the ContractIQ key (copied file to file, never printed). Anthropic was the first plan and was replaced. |
 | ShipStation account? | Sandbox key (`TEST_…`), same base URL as production; sandbox offers UPS, FedEx and USPS. |
-| Production URL? | https://MOTS-ShipIt.AI (custom domain, to attach later). |
+| Production URL? | Asked for https://MOTS-ShipIt.AI (that is, `mots-shipit.ai`). The domain was never registered (`whois`: "Domain not found"; DNS: NXDOMAIN). On 2026-10-08 the user decided not to buy it, so the live address is https://gen-ai-apps-mots-shipit-ai.netlify.app. |
+| Names for the GitHub repo, laptop folder and Netlify project? | All three `gen-ai-apps-mots-shipit-ai` (lowercase, hyphens). The repo and folder were first created as `Gen-AI-Apps_MOTS-ShipIt` and renamed at the end; see 2.13. |
 | Hosting? | Netlify: a new project in the same team as ContractIQ, named `gen-ai-apps-mots-shipit-ai`. |
 | Production database for the first deploy? | The same Supabase project as development. |
 | Deploy target: Netlify or Vercel? | Netlify (the course lesson deploys to Netlify; ContractIQ checklist item 6). |
@@ -121,10 +122,11 @@ Fill this in at the start of the next build and most stops disappear. Each row i
 ### Stage 1: engineering plan
 
 1. Read `CLAUDE.md`, the PRD, `docs/design.md` and the ContractIQ playbook (`CLAUDEchecklist1.md` and session log in the sibling repo).
-2. Note that the `skills/*/SKILL.md` files are not slash commands here. Read `skills/engineering-planner/SKILL.md` and follow it by hand.
-3. Ask the architecture questions in one batch: auth, database, language model, roles, hosting, tenancy.
-4. Write `docs/engineering/engineering-doc.md`. The skill defines only this file; write `implementation-specs.md` using the `implementation-specs` method pointed at one consolidated file.
-5. Show both files and ask: "Both engineering documents are ready… let me know when you're happy to move to Stage 2."
+2. Confirm the names and the address exactly, and write them into the decision sheet: GitHub repo name, laptop folder name, Netlify project name, and the live URL. If the URL is a custom domain, check now that it is registered (`whois <domain>`, `dig +short NS <domain> @8.8.8.8`); "Domain not found" or NXDOMAIN means it must be bought before Stage 6, which costs money and needs the user's decision.
+3. Note that the `skills/*/SKILL.md` files are not slash commands here. Read `skills/engineering-planner/SKILL.md` and follow it by hand.
+4. Ask the architecture questions in one batch: auth, database, language model, roles, hosting, tenancy.
+5. Write `docs/engineering/engineering-doc.md`. The skill defines only this file; write `implementation-specs.md` using the `implementation-specs` method pointed at one consolidated file.
+6. Show both files and ask: "Both engineering documents are ready… let me know when you're happy to move to Stage 2."
 
 ### Stage 2: implementation specs
 
@@ -137,7 +139,7 @@ Fill this in at the start of the next build and most stops disappear. Each row i
 1. Ask where the project goes; mirror the sibling layout without asking further.
 2. Scaffold Next.js 14.2 App Router with TypeScript, Tailwind mapped to `docs/design.md` tokens, the Supabase SSR client plus a service-role admin client, TanStack Query and Zod.
 3. Add placeholder pages for every console route and the auth middleware.
-4. Add the root `netlify.toml` now (contents in Stage 6, step 2).
+4. Add the root `netlify.toml` now (contents in Stage 6, step 3).
 5. Branch, PR, merge, tag `stage-3-complete`, push.
 
 ### Stage 4: system design
@@ -183,18 +185,19 @@ Database patterns that worked:
 
 ### Stage 6: deploy to Netlify
 
-1. Stop the dev server, run `npm run build` (both use `.next`), restart the dev server.
-2. Commit a root `netlify.toml`: `base` = app folder, `command = "npm run build"`, `publish = ".next"`, plugin `@netlify/plugin-nextjs` (also a devDependency). Without the plugin every route is a 404.
-3. Add `SECRETS_SCAN_OMIT_KEYS` for public and non-secret settings whose values appear in the repo (`NEXT_PUBLIC_*`, model name, origin zip, outreach mode, numeric limits). Keep real secrets scanned.
-4. In Netlify, open the same team as the sibling project. Click **Add new project → Import an existing project → GitHub**. Never use drag-and-drop: that uploads static files with no server functions.
-5. If the repo is not listed, click **Configure the Netlify app on GitHub**, add the repo under Repository access, Save, and reload Netlify. Access alone does not create a project; import it.
-6. Set the project name and branch `main`; leave build fields to `netlify.toml`.
-7. Environment variables: **Add a variable → Import from a .env file**, all scopes. Set `NEXT_PUBLIC_APP_URL` to the live address (an import of `.env.local` brings `localhost`). Skip empty variables.
-8. **Deploys → Trigger deploy** after every variable change; variables apply only to builds started after they are saved.
-9. If the project is **Private**, click **Make public**.
-10. Supabase → Authentication → URL Configuration → Redirect URLs: add `https://<site>.netlify.app/**`.
-11. Smoke test: curl every page and API gate, then run the live API and browser tests with `TEST_APP_URL=<site>`. Skip the IP rate-limit test on Netlify.
-12. Commit, tag `stage-6-complete`, push.
+1. Before anything else, re-check the live address from the decision sheet. If it is a custom domain, run `whois` and `dig` again: registered and owned by the user means attach it in this stage (Netlify → Domain management → Add a domain, then `NEXT_PUBLIC_APP_URL`, Supabase Site URL and redirect URLs); not registered means stop and ask the user to buy it or choose the netlify.app address. Never defer it silently.
+2. Stop the dev server, run `npm run build` (both use `.next`), restart the dev server.
+3. Commit a root `netlify.toml`: `base` = app folder, `command = "npm run build"`, `publish = ".next"`, plugin `@netlify/plugin-nextjs` (also a devDependency). Without the plugin every route is a 404.
+4. Add `SECRETS_SCAN_OMIT_KEYS` for public and non-secret settings whose values appear in the repo (`NEXT_PUBLIC_*`, model name, origin zip, outreach mode, numeric limits). Keep real secrets scanned.
+5. In Netlify, open the same team as the sibling project. Click **Add new project → Import an existing project → GitHub**. Never use drag-and-drop: that uploads static files with no server functions.
+6. If the repo is not listed, click **Configure the Netlify app on GitHub**, add the repo under Repository access, Save, and reload Netlify. Access alone does not create a project; import it.
+7. Set the project name and branch `main`; leave build fields to `netlify.toml`.
+8. Environment variables: **Add a variable → Import from a .env file**, all scopes. Set `NEXT_PUBLIC_APP_URL` to the live address (an import of `.env.local` brings `localhost`). Skip empty variables.
+9. **Deploys → Trigger deploy** after every variable change; variables apply only to builds started after they are saved.
+10. If the project is **Private**, click **Make public**.
+11. Supabase → Authentication → URL Configuration → Redirect URLs: add `https://<site>.netlify.app/**`.
+12. Smoke test: curl every page and API gate, then run the live API and browser tests with `TEST_APP_URL=<site>`. Skip the IP rate-limit test on Netlify.
+13. Commit, tag `stage-6-complete`, push.
 
 Notes from both builds:
 
@@ -255,11 +258,19 @@ Security design points carried from ContractIQ to ShipIt:
 7. The Drive connector can only create, read, rename, move and trash files; editing a Doc in place needs a Google Docs editing connector, which was not available. A corrected version is therefore a new Doc: rename the old one "SUPERSEDED (see Final Copy) …" and trash it only when the user asks (trash keeps it for 30 days).
 8. Commit the repo copy, add an annotated tag, push both.
 
+### Renaming the GitHub repo and the laptop folder (if names don't match)
+
+1. GitHub: `gh repo rename <new-name> -R <owner>/<old-name> --yes`, then `git remote set-url origin https://github.com/<owner>/<new-name>.git` and `git fetch`. GitHub redirects the old name.
+2. Push one commit and confirm Netlify still deploys from the renamed repo: the response header `age` resets to a few seconds when the new deploy publishes. (It did here: about two minutes after the push.)
+3. Update the names in `README.md`, `docs/engineering/engineering-doc.md` (folder tree), the security plan and `test/README.md`. The app code reads its own address from `NEXT_PUBLIC_APP_URL`, so no code change is needed.
+4. Run the full test suite locally and against the live site.
+5. Rename the laptop folder last, because Claude Code runs inside it: stop the dev server, `mv` the folder, copy Claude's project memory folder to the new path's name under `~/.claude/projects/`, then reopen Claude Code in the new folder.
+
 ## 1.5 Kickoff prompt for the next build
 
 Paste into a new Claude Code session in the new repo, with the brackets filled in:
 
-> Build [product] from [PRD path] using this repo's CLAUDE.md 7-stage workflow. Follow the MOTS ShipIt build playbook (final copy) and the ContractIQ session log; do not reorder steps. Here are my answers to the decision sheet: [answers]. Standing rules: [section 1.2]. Ask me questions only for what the sheet doesn't cover, recommended option first. Stop after each stage and ask to continue. In Stage 4 build features in auto mode; after each feature verify live, commit, add an annotated tag stage-4-feature-<n>-<name>, push the commit and the tag. Never print or commit secrets. ShipStation (or any external booking API) is estimate-only unless I say otherwise.
+> Build [product] from [PRD path] using this repo's CLAUDE.md 7-stage workflow. Names: GitHub repo [name], laptop folder [name], Netlify project [name], live URL [URL; say whether the domain is already registered]. Follow the MOTS ShipIt build playbook (final copy) and the ContractIQ session log; do not reorder steps. Here are my answers to the decision sheet: [answers]. Standing rules: [section 1.2]. Ask me questions only for what the sheet doesn't cover, recommended option first. Stop after each stage and ask to continue. In Stage 4 build features in auto mode; after each feature verify live, commit, add an annotated tag stage-4-feature-<n>-<name>, push the commit and the tag. Never print or commit secrets. ShipStation (or any external booking API) is estimate-only unless I say otherwise.
 
 # Part 2. The record of this build
 
@@ -291,6 +302,8 @@ Paste into a new Claude Code session in the new repo, with the brackets filled i
 | 19:29 | Stage 7 security (PR #3) | dfbb4c5, merge b628e9f | stage-7-complete |
 | 19:51 | Playbook copy in the repo | 7aa77d9 | stage-7-session-log-playbook-2026-10-08 |
 | 20:13 | Playbook final copy | 035ab99 | stage-7-playbook-final-copy-2026-10-08 |
+| 20:23 | Playbook verified against ContractIQ log | febb9cd | stage-7-playbook-final-copy-verified-2026-10-08 |
+| 20:29 | GitHub repo renamed to gen-ai-apps-mots-shipit-ai; docs updated | 765cdaf | |
 
 Pull requests: #1 file-name standardization, #2 Stage 3 scaffold, #3 Stage 7 security. All merged.
 
@@ -302,6 +315,7 @@ Pull requests: #1 file-name standardization, #2 Stage 3 scaffold, #3 Stage 7 sec
 - The project was Private until "Make public" was clicked.
 - A stray `.Rhistory` file was swept into a commit; untracked and added to `.gitignore`.
 - Stage 7: the security skill was not a slash command; no `src/` folder existed, so files went to `contractiq/lib/security/`; the rate-limit table was redesigned from `user_id` to an identifier before shipping; advisors found mutable search paths and an RPC-exposed `SECURITY DEFINER` function; both prompts were hardened; the work went through PR #1 with a regular merge, migration `stage7_security_foundation`, a fresh advisor run and a post-merge smoke test.
+- Its ".ai" ("MOTS_contract_scout.ai") was a brand name in the page title and in the git tag labels (`…-ProductURL-MOTS_contract_scout.ai`), not a web address: the site was only ever reachable at `gen-ai-apps-mots-contract-scout-ai.netlify.app`, underscores are not allowed in domain names, and no matching `.ai` domain is registered.
 - Open items it left: an old PDF library that fails on some modern PDFs, the Netlify 10-second function limit versus a 30-second extraction, and Supabase Auth dashboard settings to verify.
 
 ## 2.3 Stages 1 to 3
@@ -396,6 +410,17 @@ create_transportation_shipment_routing_guide · seed_transportation_shipment_rou
 - The user then asked to verify the final copy against this session and the ContractIQ log; ten missing items were added (close-out runbook, risks log, Netlify function time limit, advisor findings table, course lab mapping and stage-order note, dashboard working mode, secrets-in-Netlify answer, tag naming, middleware and prompt details, Drive upload rules).
 - A side note the user sent with /btw could not be seen from this session; /btw messages are not shared with the main conversation, so paste such notes into the chat.
 
+## 2.13 Last-minute defects (found by the user after the playbook was written)
+
+| Defect | What was asked | What was built | Cause | Resolution |
+|---|---|---|---|---|
+| Live address | https://MOTS-ShipIt.AI (asked during Stage 4) | https://gen-ai-apps-mots-shipit-ai.netlify.app | The domain was never registered. In Stage 6 Claude asked once; the user didn't answer and Claude chose "attach later" without saying this blocked the requested address. Nobody checked registration until the end. | Checked: `whois` "Domain not found", DNS NXDOMAIN. The user decided not to buy it; the netlify.app address is the live URL. |
+| GitHub repo name | `gen-ai-apps-mots-shipit-ai` | `Gen-AI-Apps_MOTS-ShipIt` | The repo kept the starter repo's naming; names were never confirmed against the request. | Renamed with `gh repo rename`; remote updated; Netlify kept deploying (verified by a new deploy after a push). |
+| Laptop folder name | `gen-ai-apps-mots-shipit-ai` | `Gen-AI-Apps_MOTS-ShipIt` | Same as the repo. | Renamed at the very end (Claude Code runs inside it); project memory copied to the new path. |
+| Netlify project name | `gen-ai-apps-mots-shipit-ai` | `gen-ai-apps-mots-shipit-ai` | Correct. | None needed. |
+
+After the rename all tests passed again: 195 locally (186 Vitest, 9 browser) and, against the live site, 80 live API and 9 browser tests.
+
 # Part 3. Reflection
 
 **Planning.** The 7-stage `CLAUDE.md` order plus the sibling's session log gave a fixed sequence, and stopping at each gate kept the user in control. What cost time was deciding things mid-stream: tenancy, domain names, the Netlify project and the security choices each paused the build. A decision sheet answered up front removes most of those pauses.
@@ -410,7 +435,7 @@ create_transportation_shipment_routing_guide · seed_transportation_shipment_rou
 
 **Final synthesis.** The product is live and tested, with security controls documented and the remaining go-live items listed. The reusable outcome is this playbook: a fixed pipeline, a filled-in decision sheet, runbooks with the failure table, and a kickoff prompt that lets the next build start from Stage 1 with most questions already answered.
 
-**Lessons learned.** Test every write path after adding a database trigger. Add the database CHECK value in the same change as the code that sends it. Prove that fail-open code actually limits. Make two-step writes fail closed. In Netlify, create the project, add variables, then deploy, and confirm a new deploy published before re-testing. Never deploy into a sibling project's site.
+**Lessons learned.** Confirm names and the live URL exactly as the user wrote them, at kickoff and again before deploying; when a question about something the user asked for goes unanswered, say plainly what the default blocks instead of choosing quietly. Test every write path after adding a database trigger. Add the database CHECK value in the same change as the code that sends it. Prove that fail-open code actually limits. Make two-step writes fail closed. In Netlify, create the project, add variables, then deploy, and confirm a new deploy published before re-testing. Never deploy into a sibling project's site.
 
 **New enhancements.** For the process: a GitHub Actions workflow that runs the unit tests on every PR; a Netlify deploy token so Claude can create the project, set variables and deploy without dashboard steps; a separate staging Supabase project for tests; scripts that seed and remove all test data; the decision sheet saved as a template file in the repo; a `risks/` log from day one; the Google Docs connector so logs update in place. For the product: admin screens for customers, policies and carriers; inbound reply webhooks; a real TMS connection; touchless-booking and compliance reports; the warehouse and order-management domains.
 
@@ -420,8 +445,8 @@ create_transportation_shipment_routing_guide · seed_transportation_shipment_rou
 
 1. Rotate the Supabase service-role key; update `.env.local` and Netlify; redeploy; rerun the tests.
 2. Enable leaked-password protection in Supabase Auth.
-3. Confirm `NEXT_PUBLIC_APP_URL` in Netlify is the live address and the Supabase redirect URL is allowed.
-4. Attach MOTS-ShipIt.AI (DNS records from Netlify), then update `NEXT_PUBLIC_APP_URL`, the Supabase Site URL and redirect URLs.
+3. Confirm `NEXT_PUBLIC_APP_URL` in Netlify is https://gen-ai-apps-mots-shipit-ai.netlify.app, and set the Supabase Site URL to it with the redirect URL `https://gen-ai-apps-mots-shipit-ai.netlify.app/**`.
+4. Custom domain: dropped by the user's decision (2026-10-08); the live address stays https://gen-ai-apps-mots-shipit-ai.netlify.app. If a domain is bought later: Netlify → Domain management → Add a domain, then update `NEXT_PUBLIC_APP_URL`, the Supabase Site URL and redirect URLs, redeploy and rerun the live tests.
 5. Provide the company email domain for sign-up; confirm the origin zip 38103 and the full names for EMEA and APLA.
 6. Load real carrier data: USDOT and MC numbers, trailer types, contacts.
 7. Choose the outreach provider (Resend, Twilio), get legal sign-off, then switch `OUTREACH_MODE` to live; add inbound reply webhooks with signature checks.

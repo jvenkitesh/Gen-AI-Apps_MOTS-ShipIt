@@ -6,7 +6,7 @@ A structured AI-assisted development operating system for building production-re
 
 ## What This Is
 
-`gen-ai-apps-mots-shipit-ai` (GitHub `jvenkitesh/gen-ai-apps-mots-shipit-ai`, Netlify project `gen-ai-apps-mots-shipit-ai`, live at https://mots-shipit.ai) is a Claude Code project that provides a repeatable, stage-by-stage workflow for building full-stack web applications. Each stage has a dedicated skill that Claude runs when invoked. No stage begins until the previous one is approved.
+`gen-ai-apps-mots-shipit-ai` (GitHub `jvenkitesh/gen-ai-apps-mots-shipit-ai`, Netlify project `gen-ai-apps-mots-shipit-ai`, live at https://gen-ai-apps-mots-shipit-ai.netlify.app) is a Claude Code project that provides a repeatable, stage-by-stage workflow for building full-stack web applications. Each stage has a dedicated skill that Claude runs when invoked. No stage begins until the previous one is approved.
 
 The current application target is **MOTS ShipIt** — an agentic workflow platform for U.S. freight brokers that sources, negotiates with, verifies, and books carriers for approved loads with minimal human touch.
 
