@@ -215,6 +215,7 @@ Notes from both builds:
 | Webhook 503 `NOT_CONFIGURED` | `TMS_WEBHOOK_SECRET` or service key missing at runtime | Add, include the Functions scope, redeploy |
 | "Exposed secrets detected" | A non-secret value appears in the repo | `SECRETS_SCAN_OMIT_KEYS` |
 | "Deployed" but nothing changed | No new deploy published | Compare the response header `age` with the publish time |
+| Custom domain doesn't load at all (NXDOMAIN) | The domain was never registered | Buy it and attach it, or keep the netlify.app address (decide with the user) |
 
 ### Stage 7: security
 
@@ -304,6 +305,7 @@ Paste into a new Claude Code session in the new repo, with the brackets filled i
 | 20:13 | Playbook final copy | 035ab99 | stage-7-playbook-final-copy-2026-10-08 |
 | 20:23 | Playbook verified against ContractIQ log | febb9cd | stage-7-playbook-final-copy-verified-2026-10-08 |
 | 20:29 | GitHub repo renamed to gen-ai-apps-mots-shipit-ai; docs updated | 765cdaf | |
+| 20:48 | Live address kept on netlify.app; defects documented | 7fcb60d | stage-7-renames-and-defects-documented-2026-10-08 |
 
 Pull requests: #1 file-name standardization, #2 Stage 3 scaffold, #3 Stage 7 security. All merged.
 
@@ -392,7 +394,7 @@ create_transportation_shipment_routing_guide · seed_transportation_shipment_rou
 | Variable | Kind | Value or note |
 |---|---|---|
 | NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY | Public | Baked in at build time |
-| NEXT_PUBLIC_APP_URL | Public | Live address in Netlify; localhost locally |
+| NEXT_PUBLIC_APP_URL | Public | https://gen-ai-apps-mots-shipit-ai.netlify.app in Netlify; localhost locally |
 | SUPABASE_SERVICE_ROLE_KEY | Secret | Used only in `lib/supabase/admin.ts`; rotate |
 | OPENAI_API_KEY, OPENAI_MODEL | Secret, setting | gpt-4o-mini |
 | SHIPSTATION_API_KEY, SHIPSTATION_FROM_POSTAL_CODE, SHIPSTATION_CARRIER_IDS | Secret, settings | Sandbox key; 38103; carrier IDs optional |
