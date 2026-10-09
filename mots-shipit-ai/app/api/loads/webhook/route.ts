@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ingestLoad, tmsLoadPayloadSchema, UnknownCustomerError } from "@/lib/freight/loadIntake";
+import { validationErrorResponse } from "@/lib/security/inputValidator";
 
 export const runtime = "nodejs";
 
@@ -25,13 +26,7 @@ export async function POST(request: Request) {
   }
 
   const parsed = tmsLoadPayloadSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    const issue = parsed.error.issues[0];
-    return NextResponse.json(
-      { error: "VALIDATION_ERROR", field: issue?.path.join(".") || null, message: issue?.message ?? "Invalid load payload." },
-      { status: 400 }
-    );
-  }
+  if (!parsed.success) return validationErrorResponse(parsed.error);
 
   try {
     const result = await ingestLoad(createAdminClient(), parsed.data);
@@ -48,7 +43,7 @@ export async function POST(request: Request) {
     );
   } catch (err) {
     if (err instanceof UnknownCustomerError) {
-      return NextResponse.json({ error: "UNKNOWN_CUSTOMER", field: "customer_id", message: err.message }, { status: 400 });
+      return NextResponse.json({ error: "UNKNOWN_CUSTOMER", field: "customer_id", message: err.message }, { status: 422 });
     }
     console.error("[loads/webhook] intake failed:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "INTAKE_FAILED", message: "The load could not be stored. Retry the webhook." }, { status: 500 });

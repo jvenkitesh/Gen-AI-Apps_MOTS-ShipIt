@@ -24,6 +24,7 @@ export const TRIGGER_TEXT: Record<string, string> = {
   low_confidence_extraction: "Carrier's price couldn't be read with confidence",
   rate_above_ceiling: "Carrier asked for more than the rate ceiling",
   load_changed_post_acceptance: "Load changed after a carrier accepted",
+  suspected_prompt_injection: "Carrier reply tried to instruct the AI; read it by hand",
 };
 
 // An exception whose SLA deadline has passed is marked breached -- never silently dropped.

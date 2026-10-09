@@ -25,15 +25,15 @@ describe("loads-webhook-intake", () => {
     expect(wrong.body).toMatchObject({ error: "UNAUTHORIZED" });
   });
 
-  it("names the bad field in a 400", async () => {
+  it("names the bad field in a 422", async () => {
     const res = await postLoadWebhook({ ...payload, origin_zipcode: "3810" });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.body).toMatchObject({ error: "VALIDATION_ERROR", field: "origin_zipcode" });
   });
 
-  it("rejects an unknown customer", async () => {
+  it("rejects an unknown customer with 422", async () => {
     const res = await postLoadWebhook({ ...payload, customer_id: randomUUID() });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.body).toMatchObject({ error: "UNKNOWN_CUSTOMER", field: "customer_id" });
   });
 

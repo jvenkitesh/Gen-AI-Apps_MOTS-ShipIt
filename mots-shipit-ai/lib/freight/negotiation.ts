@@ -6,6 +6,7 @@ import { sendCarrierMessage } from "@/lib/freight/outreach";
 import { assertNotPaused, ScopePausedError } from "@/lib/freight/controlPlane";
 import { recordEvent } from "@/lib/freight/audit";
 import { OPENAI_MODEL } from "@/lib/ai/openaiClient";
+import { sanitizeForLLM } from "@/lib/security/promptInjectionGuard";
 import type { UserRole } from "@/types/userRole";
 
 export class NegotiationError extends Error {
@@ -141,7 +142,30 @@ export async function recordCarrierReply(params: {
     return { kind: "opted_out" };
   }
 
-  const extracted = await extractOfferFromReply(replyText);
+  // A reply that tries to instruct the AI is never sent to it. It is kept, and a person reads
+  // it and enters the offer by hand, so a real carrier's quote is never lost.
+  const check = sanitizeForLLM(replyText);
+  if (!check.safe) {
+    await recordEvent(admin, {
+      entityType: "offer",
+      entityId: inbound.id,
+      eventType: "injection_suspected",
+      loadId: load.id,
+      actorId: userId,
+      payload: { carrier_id: carrierId, interaction_id: inbound.id, reasons: check.reasons },
+      policyVersion: load.evaluated_policy_version,
+    });
+    await raiseException(admin, load, {
+      trigger_type: "suspected_prompt_injection",
+      details: { carrier_id: carrierId, interaction_id: inbound.id, reasons: check.reasons, reply_excerpt: replyText.slice(0, 500) },
+      recommended_action: "The reply contains text that tries to instruct the AI, so it wasn't sent to the AI. Read the reply and enter the offer by hand.",
+      risk_level: "high",
+      slaMinutes: LOW_CONFIDENCE_SLA_MINUTES,
+    });
+    return { kind: "needs_review", reason: "The reply contains instructions aimed at the AI, so a person must read it and enter the offer." };
+  }
+
+  const extracted = await extractOfferFromReply(check.text);
   // Which model read the reply, and what it read, so every offer is traceable to its source.
   await recordEvent(admin, {
     entityType: "offer",

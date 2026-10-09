@@ -22,15 +22,15 @@ describe("estimate-chatbot", () => {
     cookie = await cookieHeader(await roleUser("viewer"));
   });
 
-  it("rejects an empty question with 400", async () => {
+  it("rejects an empty question with 422", async () => {
     const res = await api("/api/estimate", { body: { query: "x" }, cookie });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.body).toMatchObject({ error: "VALIDATION_ERROR" });
   });
 
   it("asks for a location when the question has none", async () => {
     const res = await api("/api/estimate", { body: { query: "What does freight cost?" }, cookie });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.body).toEqual({ error: "NO_LOCATION", message: "Please include a US zip code or state name." });
   });
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/security/authGuard";
+import { TOKEN_LIMITS } from "@/lib/security/tokenLimiter";
 
 // The signed-in user's recent questions (RLS limits rows to their own), newest first.
 export async function GET() {
@@ -12,7 +13,7 @@ export async function GET() {
     .from("load_estimate_enquiries")
     .select("id, enquiry_text, enquired_at, answered_from_cache, load_estimate_cache(answer, sources)")
     .order("enquired_at", { ascending: false })
-    .limit(20);
+    .limit(TOKEN_LIMITS.estimateHistoryItems);
 
   if (error) {
     console.error("[api/estimate/history] failed:", error.code, error.message);

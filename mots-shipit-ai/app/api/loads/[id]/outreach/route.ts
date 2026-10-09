@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuth } from "@/lib/security/authGuard";
+import { outreachRequestSchema, parseBody } from "@/lib/security/inputValidator";
 import { contactBatch, OutreachBlockedError } from "@/lib/freight/outreach";
-
-const bodySchema = z.object({ batchSize: z.number().int().min(1).max(10).default(3) });
 
 // Roles that may contact carriers. Compliance analysts and viewers can only read.
 const OUTREACH_ROLES = ["administrator", "supply_chain_operations_manager", "transportation_planner"] as const;
@@ -18,17 +16,15 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: "NOT_CONFIGURED", message: "Outreach is not configured." }, { status: 503 });
   }
 
-  const parsed = bodySchema.safeParse((await request.json().catch(() => ({}))) ?? {});
-  if (!parsed.success) {
-    return NextResponse.json({ error: "VALIDATION_ERROR", message: "batchSize must be a whole number from 1 to 10." }, { status: 400 });
-  }
+  const body = await parseBody(request, outreachRequestSchema, {});
+  if (!body.ok) return body.response;
 
   try {
     const result = await contactBatch({
       supabase: createClient(),
       admin: createAdminClient(),
       loadId: params.id,
-      batchSize: parsed.data.batchSize,
+      batchSize: body.data.batchSize,
       userId: auth.userId,
     });
     return NextResponse.json(result, { status: 200 });

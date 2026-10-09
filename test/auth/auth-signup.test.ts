@@ -11,7 +11,7 @@ describe("auth-signup", () => {
       headers: fakeClientIp(),
     });
     expect(res.status).toBe(422);
-    expect(res.body).toEqual({ error: "VALIDATION_ERROR", message: "Password must be at least 8 characters." });
+    expect(res.body).toEqual({ error: "VALIDATION_ERROR", field: "password", message: "Password must be at least 8 characters." });
   });
 
   it("refuses an address that isn't on the allow-list, and creates no account", async () => {

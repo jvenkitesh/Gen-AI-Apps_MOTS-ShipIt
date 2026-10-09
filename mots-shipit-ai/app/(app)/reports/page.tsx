@@ -5,6 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { actorNames, recentAuditEvents, type AuditEventRow } from "@/lib/freight/audit";
 
+// Per-request data (session cookies); never pre-rendered at build time.
+export const dynamic = "force-dynamic";
+
 export default async function ReportsPage() {
   let events: AuditEventRow[] = [];
   let names: Record<string, string> = {};

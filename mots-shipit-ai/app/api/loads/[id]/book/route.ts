@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuth } from "@/lib/security/authGuard";
+import { bookingRequestSchema, parseBody } from "@/lib/security/inputValidator";
+import { checkRateLimit, rateLimitResponse } from "@/lib/security/rateLimiter";
 import { BookingError, commitBooking } from "@/lib/freight/booking";
-
-const bodySchema = z.object({
-  offerId: z.string().uuid(),
-  idempotencyKey: z.string().min(8).max(100),
-});
 
 // Assisted booking: a person books an accepted offer. A retry with the same key returns the
 // same booking (200), never a second one.
@@ -15,17 +11,18 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const auth = await requireAuth(["administrator", "supply_chain_operations_manager", "transportation_planner"]);
   if (auth instanceof NextResponse) return auth;
 
-  const parsed = bodySchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return NextResponse.json({ error: "VALIDATION_ERROR", message: "offerId and idempotencyKey are required." }, { status: 400 });
-  }
+  const rateLimit = await checkRateLimit(`user:${auth.userId}`, "booking");
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
+
+  const body = await parseBody(request, bookingRequestSchema);
+  if (!body.ok) return body.response;
 
   try {
     const { booking, outcome } = await commitBooking({
       admin: createAdminClient(),
       loadId: params.id,
-      offerId: parsed.data.offerId,
-      idempotencyKey: parsed.data.idempotencyKey,
+      offerId: body.data.offerId,
+      idempotencyKey: body.data.idempotencyKey,
       userId: auth.userId,
     });
     return NextResponse.json({ booking, outcome }, { status: outcome === "created" ? 201 : 200 });

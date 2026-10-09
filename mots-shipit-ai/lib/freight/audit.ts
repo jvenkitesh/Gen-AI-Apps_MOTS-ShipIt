@@ -90,6 +90,7 @@ export function describeEvent(e: AuditEventRow): string {
     case "offer:accepted": return `Offer accepted:${money(n.rate_dollars)}.`;
     case "offer:rejected": return `Offer rejected${n.decision_note ? `: ${n.decision_note}` : "."}`;
     case "offer:expired": return `Offer expired${n.decision_note ? `: ${n.decision_note}` : "."}`;
+    case "offer:injection_suspected": return `Carrier reply held for a person: it tried to instruct the AI.`;
     case "offer:extracted": return `Carrier reply read by ${e.model_version ?? "the AI model"}.`;
     case "booking:committed": return `Booking committed:${money(n.rate_dollars)}.`;
     case "booking:tms_sync_succeeded": return `Booking written to the TMS${n.tms_external_reference ? ` (ref ${n.tms_external_reference})` : ""}.`;

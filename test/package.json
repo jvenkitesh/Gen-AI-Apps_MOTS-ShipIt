@@ -13,6 +13,7 @@
     "test:exceptions": "vitest run --project integration exceptions/",
     "test:estimate": "vitest run --project integration estimate/",
     "test:audit": "vitest run --project integration audit/",
+    "test:security": "vitest run --project integration security/",
     "test:watch": "vitest --project unit",
     "test:e2e": "playwright test",
     "test:all": "vitest run && playwright test"

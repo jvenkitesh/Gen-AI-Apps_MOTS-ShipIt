@@ -14,7 +14,8 @@ create schema if not exists operational_excellence_governance;
 create table if not exists operational_excellence_governance.rate_limit_events (
   id bigint generated always as identity primary key,
   identifier text not null check (identifier ~ '^(ip|user):.+$'),
-  action text not null check (action in ('auth', 'estimate', 'booking', 'webhook')),
+  -- carrier_reply added in Stage 7 (migration stage7_security_baseline, see rls-policies.sql).
+  action text not null check (action in ('auth', 'estimate', 'booking', 'carrier_reply', 'webhook')),
   created_at timestamptz not null default now()
 );
 
