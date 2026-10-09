@@ -47,6 +47,18 @@ npx playwright test e2e/load-outreach-from-load-page.spec.ts   # one browser tes
 npx playwright show-trace test-results/.../trace.zip           # debug a browser failure
 ```
 
+### Against the live site (Stage 6 smoke test)
+
+```bash
+export TEST_APP_URL=https://gen-ai-apps-mots-shipit-ai.netlify.app
+npx vitest run --project integration auth/auth-login auth/auth-roles estimate/ loads/ negotiation/ control/ exceptions/ audit/
+npx playwright test
+```
+
+Skip `auth/auth-rate-limit` against Netlify: there the limiter keys on Netlify's own client-IP
+header, so every request from your machine shares one bucket and the test only locks you out
+for a minute. The live site must have the same `TMS_WEBHOOK_SECRET` as `.env.local`.
+
 Integration files run one at a time (`fileParallelism: false`): one shared dev project.
 A full `npm run test:all` takes under 2 minutes, mostly the live OpenAI and ShipStation calls.
 
